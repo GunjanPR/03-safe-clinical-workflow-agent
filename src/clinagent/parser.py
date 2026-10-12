@@ -11,6 +11,7 @@ Every item keeps the character span of its mention so recommendations can cite t
 
 from __future__ import annotations
 
+import difflib
 import json
 import re
 import time
@@ -326,13 +327,83 @@ class LLMClient:
 
 
 def _find_span(text: str, name: str, used: set[int]) -> tuple[int, int] | None:
+    """Locate the model's medication name in the statement (exact, then one-typo fuzzy)."""
     if not name:
         return None
     for m in re.finditer(re.escape(name.strip()), text, re.I):
         if m.start() not in used:
             used.add(m.start())
             return (m.start(), m.end())
+    # The model may correct a misspelling ("lisionpril" -> "lisinopril") or add a strength.
+    head = name.strip().split()[0].lower()
+    if len(head) >= 5:
+        for m in re.finditer(r"[A-Za-z][A-Za-z\-]{3,}", text):
+            if m.start() in used:
+                continue
+            if difflib.SequenceMatcher(None, m.group(0).lower(), head).ratio() >= 0.8:
+                used.add(m.start())
+                return (m.start(), m.end())
     return None
+
+
+def merge_parses(
+    det: ParseResult, llm: ParseResult, text: str, lex: Lexicon | None = None
+) -> tuple[ParseResult, dict[str, float]]:
+    """Cross-check the LLM parse against the deterministic one.
+
+    - LLM items that cannot be anchored to a span of the statement are dropped (a model can
+      invent medications, especially for near-empty statements).
+    - Items both parsers found are merged: strength, frequency and "stopped" come from the
+      text-anchored deterministic reading when it has them, otherwise from the model.
+    - Items only one parser found are kept with agreement 0.6, which lowers confidence.
+    - "Unidentified" medications from the model must occur in the text and name no drug.
+    """
+    anchored, seen = [], set()
+    for it in llm.items:
+        if it.span is None or (it.key, it.span) in seen:
+            continue
+        seen.add((it.key, it.span))
+        anchored.append(it)
+    dropped = len(llm.items) - len(anchored)
+    merged: list[ReportedItem] = []
+    agreement: dict[str, float] = {}
+    free_llm = list(anchored)
+    for d in det.items:
+        same = [x for x in free_llm if x.key == d.key]
+        if same:
+            x = min(same, key=lambda x: abs(x.span[0] - (d.span or (0, 0))[0]))
+            free_llm.remove(x)
+            d.strengths = d.strengths or x.strengths
+            d.per_day = d.per_day if d.per_day is not None else x.per_day
+            d.prn = d.prn or x.prn
+            d.taking = d.taking and x.taking
+            d.source = "det+llm"
+            agreement[d.key] = min(agreement.get(d.key, 1.0), 1.0)
+        else:
+            agreement[d.key] = 0.6
+        merged.append(d)
+    for x in free_llm:
+        agreement[x.key] = 0.6
+        merged.append(x)
+    # The model sometimes lists *named* drugs as "unidentified"; keep only entries that name
+    # no known drug and that actually occur in the statement.
+    lex = lex or lexicon()
+    llm_vague = [
+        u
+        for u in llm.unidentified
+        if u.strip().lower() in text.lower()
+        and not lex.find_all(u)
+        and not any(lex.fuzzy(w) for w in u.split())
+    ]
+    unidentified = det.unidentified or llm_vague
+    res = ParseResult(
+        merged,
+        unidentified,
+        "llm+det",
+        latency_ms=llm.latency_ms,
+        tokens={**llm.tokens, "dropped_unanchored": dropped},
+    )
+    return res, agreement
 
 
 def parse_llm(text: str, client: LLMClient, lex: Lexicon | None = None) -> ParseResult:

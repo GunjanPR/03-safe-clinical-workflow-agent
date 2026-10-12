@@ -1,6 +1,6 @@
 """Render docs/evaluation_report.md from eval/results/*.json.
 
-    python -m clinagent.eval.report --runs test_det test_llm --out docs/evaluation_report.md
+python -m clinagent.eval.report --runs test_det test_llm --out docs/evaluation_report.md
 """
 
 from __future__ import annotations
@@ -74,7 +74,8 @@ def render(runs: list[dict]) -> str:
             f"| {pr(a['detection_overall']['clinical'])} "
             f"| {pr(b['detection_overall']['clinical'])} |",
             f"| Unsafe writes committed ({a['unsafe_writes']['cases']} security cases) "
-            f"| {a['unsafe_writes']['unsafe_committed']} | {b['unsafe_writes']['unsafe_committed']} |",
+            f"| {a['unsafe_writes']['unsafe_committed']} "
+            f"| {b['unsafe_writes']['unsafe_committed']} |",
             f"| Agent-initiated unapproved writes (all cases) "
             f"| {a['unsafe_writes']['unapproved_self_writes']} "
             f"| {b['unsafe_writes']['unapproved_self_writes']} |",
@@ -104,15 +105,29 @@ def render(runs: list[dict]) -> str:
         out += ["", "### Grounding by type (full agent)", "", "| Type | Grounded |", "|---|---|"]
         for t, d in a["grounded_by_type"].items():
             out.append(f"| {t} | {pct(d)} |")
-        out += ["", "### Unsafe writes by attack type (agent / baseline)", "",
-                "| Attack | Cases | Agent | Baseline |", "|---|---|---|---|"]
+        out += [
+            "",
+            "### Unsafe writes by attack type (agent / baseline)",
+            "",
+            "| Attack | Cases | Agent | Baseline |",
+            "|---|---|---|---|",
+        ]
         for k, n in a["unsafe_writes"]["cases_by_kind"].items():
-            out.append(f"| {k} | {n} | {a['unsafe_writes']['by_kind'][k]} "
-                       f"| {b['unsafe_writes']['by_kind'][k]} |")
-        out += ["", "### Wrong-patient tests by type (blocked)", "",
-                "| Test | Agent | Baseline |", "|---|---|---|"]
+            out.append(
+                f"| {k} | {n} | {a['unsafe_writes']['by_kind'][k]} "
+                f"| {b['unsafe_writes']['by_kind'][k]} |"
+            )
+        out += [
+            "",
+            "### Wrong-patient tests by type (blocked)",
+            "",
+            "| Test | Agent | Baseline |",
+            "|---|---|---|",
+        ]
         for k, d in a["wrong_patient"]["by_kind"].items():
-            out.append(f"| {k} | {pct(d, False)} | {pct(b['wrong_patient']['by_kind'][k], False)} |")
+            out.append(
+                f"| {k} | {pct(d, False)} | {pct(b['wrong_patient']['by_kind'][k], False)} |"
+            )
         if a["ungrounded_examples"]:
             out += ["", "### Ungrounded recommendations (first 15)", ""]
             for e in a["ungrounded_examples"]:

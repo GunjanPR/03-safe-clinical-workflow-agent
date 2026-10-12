@@ -11,6 +11,7 @@ the store, so evaluation writes never touch data/clinical.db.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import platform
 import random
@@ -46,21 +47,38 @@ WP_SWITCH_KINDS = ("mid_session_read", "mid_session_reidentify")
 
 
 class CachedLLM(LLMClient):
-    """Memoizes identical prompts so the agent and the baseline share one call per text."""
+    """Memoizes identical prompts so the agent and the baseline share one call per text.
 
-    def __init__(self, *a, **kw):
+    With `cache_path`, answers persist across runs (decoding is temperature 0 with a fixed
+    seed), so re-scoring after a code change does not repeat the model calls. Latency is only
+    measured on real calls; see `calls` vs `cache_hits` in the summary.
+    """
+
+    def __init__(self, *a, cache_path: str | None = None, **kw):
         super().__init__(*a, **kw)
         self.calls = 0
         self.cache_hits = 0
+        self.cache_path = Path(cache_path) if cache_path else None
         self._memo: dict[str, tuple] = {}
+        if self.cache_path and self.cache_path.exists():
+            for line in self.cache_path.read_text(encoding="utf-8").splitlines():
+                rec = json.loads(line)
+                self._memo[rec["key"]] = (rec["data"], rec["usage"])
+
+    def _key(self, system: str, user: str) -> str:
+        return hashlib.sha256(f"{self.model}|{system}|{user}".encode()).hexdigest()
 
     def chat_json(self, system: str, user: str):
-        if user in self._memo:
+        key = self._key(system, user)
+        if key in self._memo:
             self.cache_hits += 1
-            return self._memo[user]
+            return self._memo[key]
         self.calls += 1
         out = super().chat_json(system, user)
-        self._memo[user] = out
+        self._memo[key] = out
+        if self.cache_path:
+            with self.cache_path.open("a", encoding="utf-8") as f:
+                f.write(json.dumps({"key": key, "data": out[0], "usage": out[1]}) + "\n")
         return out
 
 
@@ -546,6 +564,7 @@ def main() -> None:
     ap.add_argument("--llm-base-url", default=None)
     ap.add_argument("--llm-model", default=None)
     ap.add_argument("--min-confidence", type=float, default=None)
+    ap.add_argument("--llm-cache", default=None, help="jsonl file of cached LLM answers")
     ap.add_argument("--limit", type=int, default=None)
     ap.add_argument("--hardware", default=platform.processor())
     ap.add_argument("--out-dir", default="eval/results")
@@ -562,7 +581,12 @@ def main() -> None:
         cases = cases[: args.limit]
     llm = None
     if args.llm_base_url:
-        llm = CachedLLM(args.llm_base_url, args.llm_model, timeout=settings.llm_timeout_s)
+        llm = CachedLLM(
+            args.llm_base_url,
+            args.llm_model,
+            timeout=settings.llm_timeout_s,
+            cache_path=args.llm_cache,
+        )
     min_conf = args.min_confidence if args.min_confidence is not None else settings.min_confidence
     audit_a, audit_b = AuditLog(), AuditLog()
     agent = ReconciliationAgent(

@@ -24,7 +24,7 @@ from .approvals import ApprovalService, proposal_hash
 from .audit import AuditLog
 from .identity import ContextLock, IdentityNotVerified, WrongPatient, verify_identity
 from .kb import KnowledgeBase, knowledge_base
-from .parser import LLMClient, ParseResult, parse_deterministic, parse_llm
+from .parser import LLMClient, ParseResult, merge_parses, parse_deterministic, parse_llm
 from .rbac import AccessDenied, Perm, require
 from .reconcile import reconcile
 from .store import Chart, Store
@@ -218,12 +218,7 @@ class ReconciliationAgent:
             if self.llm:
                 res: ParseResult = parse_llm(text, self.llm)
                 if res.parser == "llm":
-                    det_keys = {i.key for i in det.items}
-                    llm_keys = {i.key for i in res.items}
-                    for k in det_keys | llm_keys:
-                        agreement[k] = 1.0 if (k in det_keys and k in llm_keys) else 0.6
-                    # Items only the deterministic parser found are kept, at lower confidence.
-                    res.items += [i for i in det.items if i.key not in llm_keys]
+                    res, agreement = merge_parses(det, res, text)
             else:
                 res = det
             span.set_attribute("parser", res.parser)

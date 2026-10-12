@@ -125,3 +125,33 @@ def test_low_confidence_goes_to_pharmacist(store, audit, approvals):
     s = agent.start_session("nurse", "nurse")
     res = agent.run(s, ANA, "Zocor 40 mg. Also a small pill for my heart, I forget the name.")
     assert res["status"] == "pharmacist_review"
+
+
+class FakeLLM:
+    """Stands in for the OpenAI-compatible client with a canned JSON answer."""
+
+    def __init__(self, meds):
+        self.meds = meds
+
+    def chat_json(self, system, user):
+        return {"medications": self.meds, "unidentified": []}, {}
+
+
+def test_llm_parse_is_anchored_and_merged():
+    from clinagent.parser import merge_parses, parse_llm
+
+    text = "I quit the lisionpril. Zocor 40 mg daily."
+    fake = FakeLLM(
+        [
+            {"name": "lisinopril", "strength": "", "frequency": "", "taking": True},
+            {"name": "Zocor", "strength": "20 mg", "frequency": "daily", "taking": True},
+            {"name": "warfarin", "strength": "5 mg", "frequency": "daily", "taking": True},
+        ]
+    )
+    llm = parse_llm(text, fake)
+    merged, agreement = merge_parses(parse_deterministic(text), llm, text)
+    by = {i.key: i for i in merged.items}
+    assert "warfarin" not in by  # not in the statement: dropped
+    assert not by["lisinopril"].taking  # the explicit stop cue wins
+    assert by["simvastatin"].strengths == [(40.0, "mg")]  # text-anchored strength wins
+    assert agreement["simvastatin"] == 1.0
