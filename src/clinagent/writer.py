@@ -43,12 +43,19 @@ def commit_change(
             token, session_id=session_id, patient_id=patient_id, changes=changes
         )
     except (WrongPatient, IdentityNotVerified) as e:
-        audit.append(session_id, actor, "write_blocked", reason="wrong_patient", detail=str(e),
-                     patient_id=patient_id)
+        audit.append(
+            session_id,
+            actor,
+            "write_blocked",
+            reason="wrong_patient",
+            detail=str(e),
+            patient_id=patient_id,
+        )
         return WriteResult(False, "wrong_patient")
     except AccessDenied as e:
-        audit.append(session_id, actor, "write_blocked", reason="rbac", detail=str(e),
-                     patient_id=patient_id)
+        audit.append(
+            session_id, actor, "write_blocked", reason="rbac", detail=str(e), patient_id=patient_id
+        )
         return WriteResult(False, "rbac")
     except ApprovalError as e:
         audit.append(session_id, actor, "write_blocked", reason=e.reason, patient_id=patient_id)
@@ -58,7 +65,13 @@ def commit_change(
         patient_id, session_id, actor, approval.approval_id, {"changes": changes}
     )
     audit.append(
-        session_id, actor, "write_committed", patient_id=patient_id, change_id=change_id,
-        approval_id=approval.approval_id, approver=approval.approver, n_changes=len(changes),
+        session_id,
+        actor,
+        "write_committed",
+        patient_id=patient_id,
+        change_id=change_id,
+        approval_id=approval.approval_id,
+        approver=approval.approver,
+        n_changes=len(changes),
     )
     return WriteResult(True, "committed", change_id)

@@ -84,7 +84,7 @@ def reported_daily_mg(r: ReportedItem) -> dict[str, float]:
     mg = r.strength_mg()
     if not mg or len(mg) != len(r.ingredients):
         return {}
-    return {i: v * (r.per_day or 1.0) for i, v in zip(r.ingredients, mg)}
+    return {i: v * (r.per_day or 1.0) for i, v in zip(r.ingredients, mg, strict=False)}
 
 
 def _match(chart_items: list[ChartItem], reported: list[ReportedItem]):
@@ -97,7 +97,9 @@ def _match(chart_items: list[ChartItem], reported: list[ReportedItem]):
         (lambda c, r: set(r.ingredients) < set(c.product.ingredients), 0.75),
         (lambda c, r: set(c.product.ingredients) < set(r.ingredients), 0.75),
     ):
-        for ri in list(free_r):
+        # Items with a stated strength pick first, so they can claim the order whose strength
+        # matches; items without one take whatever is left.
+        for ri in sorted(free_r, key=lambda i: reported[i].strength_mg() is None):
             r = reported[ri]
             cands = [ci for ci in free_c if score_fn(chart_items[ci], r)]
             if not cands:
@@ -105,8 +107,11 @@ def _match(chart_items: list[ChartItem], reported: list[ReportedItem]):
             # Prefer the candidate whose strength matches what the patient said.
             rmg = r.strength_mg()
             best = next(
-                (ci for ci in cands
-                 if rmg and chart_items[ci].product.strength_signature() == tuple(sorted(rmg))),
+                (
+                    ci
+                    for ci in cands
+                    if rmg and chart_items[ci].product.strength_signature() == tuple(sorted(rmg))
+                ),
                 cands[0],
             )
             pairs.append((chart_items[best], r, quality))
@@ -118,8 +123,12 @@ def _match(chart_items: list[ChartItem], reported: list[ReportedItem]):
 def _fmt_per_day(v: float | None) -> str:
     if v is None:
         return "unspecified"
-    return {1.0: "once daily", 2.0: "twice daily", 3.0: "three times daily",
-            4.0: "four times daily"}.get(v, f"{v:g}/day")
+    return {
+        1.0: "once daily",
+        2.0: "twice daily",
+        3.0: "three times daily",
+        4.0: "four times daily",
+    }.get(v, f"{v:g}/day")
 
 
 def _span(r: ReportedItem) -> list[list[int]]:
@@ -159,7 +168,9 @@ def reconcile(
         explicit = r is not None
         findings.append(
             Finding(
-                "omission", [c.product.key], None,
+                "omission",
+                [c.product.key],
+                None,
                 f"{c.med['display']} is on the chart but the patient "
                 + ("says they stopped it." if explicit else "did not report taking it."),
                 "Confirm with the patient and prescriber; mark as not taking if discontinued.",
@@ -167,8 +178,9 @@ def reconcile(
                 {"fhir": [c.ref], "statement": _span(r) if r else [], "kb": []},
             )
         )
-        changes.append({"op": "mark_not_taking", "medication_request": c.ref,
-                        "product": c.product.key})
+        changes.append(
+            {"op": "mark_not_taking", "medication_request": c.ref, "product": c.product.key}
+        )
 
     # -- commissions: reported and taken, not on the chart
     for r in unmatched_rep:
@@ -176,7 +188,9 @@ def reconcile(
             continue
         findings.append(
             Finding(
-                "commission", [r.key], None,
+                "commission",
+                [r.key],
+                None,
                 f"Patient reports taking {r.surface}"
                 + (f" {r.strengths[0][0]:g} {r.strengths[0][1]}" if r.strengths else "")
                 + ", which is not on the chart.",
@@ -185,8 +199,16 @@ def reconcile(
                 {"fhir": [], "statement": _span(r), "kb": []},
             )
         )
-        changes.append({"op": "add_reported", "product": r.key, "surface": r.surface,
-                        "strengths": r.strengths, "per_day": r.per_day, "prn": r.prn})
+        changes.append(
+            {
+                "op": "add_reported",
+                "product": r.key,
+                "surface": r.surface,
+                "strengths": r.strengths,
+                "per_day": r.per_day,
+                "prn": r.prn,
+            }
+        )
 
     # -- dose and frequency mismatches on matched, taken products
     for c, r, q in pairs:
@@ -194,10 +216,17 @@ def reconcile(
             continue
         chart_sig = c.product.strength_signature()
         rep_mg = r.strength_mg()
-        if chart_sig and rep_mg and len(rep_mg) == len(chart_sig) and tuple(sorted(rep_mg)) != chart_sig:
+        if (
+            chart_sig
+            and rep_mg
+            and len(rep_mg) == len(chart_sig)
+            and tuple(sorted(rep_mg)) != chart_sig
+        ):
             findings.append(
                 Finding(
-                    "dose", [c.product.key], None,
+                    "dose",
+                    [c.product.key],
+                    None,
                     f"Chart: {c.med['display']}; patient reports "
                     f"{'/'.join(f'{v:g}' for v in rep_mg)} mg.",
                     "Confirm the current dose with the patient/prescriber and update the record.",
@@ -205,15 +234,26 @@ def reconcile(
                     {"fhir": [c.ref], "statement": _span(r), "kb": []},
                 )
             )
-            changes.append({"op": "update_dose", "medication_request": c.ref,
-                            "product": c.product.key, "reported_mg": rep_mg})
+            changes.append(
+                {
+                    "op": "update_dose",
+                    "medication_request": c.ref,
+                    "product": c.product.key,
+                    "reported_mg": rep_mg,
+                }
+            )
         if (
-            c.per_day is not None and r.per_day is not None and not r.prn
-            and not c.med.get("as_needed") and abs(c.per_day - r.per_day) > 1e-6
+            c.per_day is not None
+            and r.per_day is not None
+            and not r.prn
+            and not c.med.get("as_needed")
+            and abs(c.per_day - r.per_day) > 1e-6
         ):
             findings.append(
                 Finding(
-                    "frequency", [c.product.key], None,
+                    "frequency",
+                    [c.product.key],
+                    None,
                     f"Chart frequency {_fmt_per_day(c.per_day)}; patient reports "
                     f"{_fmt_per_day(r.per_day)}.",
                     "Confirm the intended schedule and update the record.",
@@ -221,8 +261,14 @@ def reconcile(
                     {"fhir": [c.ref], "statement": _span(r), "kb": []},
                 )
             )
-            changes.append({"op": "update_frequency", "medication_request": c.ref,
-                            "product": c.product.key, "reported_per_day": r.per_day})
+            changes.append(
+                {
+                    "op": "update_frequency",
+                    "medication_request": c.ref,
+                    "product": c.product.key,
+                    "reported_per_day": r.per_day,
+                }
+            )
 
     # -- clinical rules over the reconciled active list
     active: list[ActiveItem] = []
@@ -241,9 +287,15 @@ def reconcile(
         if not r.taking:
             continue
         iid = f"reported:{n}"
-        active.append(ActiveItem(iid, r.product(), r.surface,
-                                 [f"statement:{r.span[0]}-{r.span[1]}"] if r.span else [],
-                                 reported_daily_mg(r)))
+        active.append(
+            ActiveItem(
+                iid,
+                r.product(),
+                r.surface,
+                [f"statement:{r.span[0]}-{r.span[1]}"] if r.span else [],
+                reported_daily_mg(r),
+            )
+        )
         conf_by_item[iid] = item_conf(r)
 
     egfr = chart.labs.get("egfr")
@@ -253,8 +305,12 @@ def reconcile(
         members = [by_id[i] for i in hit.item_ids]
         fhir = [ref for a in members for ref in a.refs if not ref.startswith("statement:")]
         fhir += list(hit.extra_refs)
-        spans = [[int(x) for x in ref.split(":")[1].split("-")]
-                 for a in members for ref in a.refs if ref.startswith("statement:")]
+        spans = [
+            [int(x) for x in ref.split(":")[1].split("-")]
+            for a in members
+            for ref in a.refs
+            if ref.startswith("statement:")
+        ]
         conf = min(conf_by_item.get(i, 1.0) for i in hit.item_ids)
         if hit.type == "renal":
             age = _lab_age_days(egfr, as_of)
@@ -269,7 +325,9 @@ def reconcile(
         labels = ", ".join(a.label for a in members)
         findings.append(
             Finding(
-                hit.type, sorted(hit.product_keys), hit.entry_id,
+                hit.type,
+                sorted(hit.product_keys),
+                hit.entry_id,
                 f"{entry['title']}: {labels}.",
                 entry["recommendation"],
                 round(conf, 3),

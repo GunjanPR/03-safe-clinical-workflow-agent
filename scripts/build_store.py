@@ -37,8 +37,8 @@ BATCH = 5000
 def _ts(s: str | None) -> dt.datetime | None:
     if not s:
         return None
-    return dt.datetime.fromisoformat(s.replace("Z", "+00:00")).astimezone(dt.UTC).replace(
-        tzinfo=None
+    return (
+        dt.datetime.fromisoformat(s.replace("Z", "+00:00")).astimezone(dt.UTC).replace(tzinfo=None)
     )
 
 
@@ -210,9 +210,9 @@ def main() -> None:
         from sqlalchemy import func, select
 
         counts["active_medication_requests"] = s.scalar(
-            select(func.count()).select_from(MedicationRequest).where(
-                MedicationRequest.status == "active"
-            )
+            select(func.count())
+            .select_from(MedicationRequest)
+            .where(MedicationRequest.status == "active")
         )
         counts["patients_with_active_meds"] = s.scalar(
             select(func.count(func.distinct(MedicationRequest.patient_id))).where(

@@ -12,8 +12,9 @@ import json
 import threading
 import time
 import uuid
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
 
 GENESIS = "0" * 64
 

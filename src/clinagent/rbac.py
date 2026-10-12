@@ -14,8 +14,18 @@ class Perm(str, Enum):
 
 
 ROLES: dict[str, set[Perm]] = {
-    "physician": {Perm.READ_CHART, Perm.RUN_RECONCILIATION, Perm.APPROVE_CHANGE, Perm.WRITE_MED_LIST},
-    "pharmacist": {Perm.READ_CHART, Perm.RUN_RECONCILIATION, Perm.APPROVE_CHANGE, Perm.WRITE_MED_LIST},
+    "physician": {
+        Perm.READ_CHART,
+        Perm.RUN_RECONCILIATION,
+        Perm.APPROVE_CHANGE,
+        Perm.WRITE_MED_LIST,
+    },
+    "pharmacist": {
+        Perm.READ_CHART,
+        Perm.RUN_RECONCILIATION,
+        Perm.APPROVE_CHANGE,
+        Perm.WRITE_MED_LIST,
+    },
     "nurse": {Perm.READ_CHART, Perm.RUN_RECONCILIATION},
     "auditor": {Perm.READ_AUDIT},
     # The agent itself can read and propose, never approve or write on its own authority.

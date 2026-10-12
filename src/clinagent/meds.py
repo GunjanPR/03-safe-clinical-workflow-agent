@@ -85,8 +85,12 @@ class Lexicon:
         out = []
         for m in self._pattern.finditer(norm):
             out.append(
-                Match(self.surfaces[m.group(1)], m.group(1), mapping[m.start()],
-                      mapping[m.end() - 1] + 1)
+                Match(
+                    self.surfaces[m.group(1)],
+                    m.group(1),
+                    mapping[m.start()],
+                    mapping[m.end() - 1] + 1,
+                )
             )
         return out
 
@@ -232,7 +236,12 @@ def text_strengths(text: str) -> list[tuple[float, str]]:
     if not m:
         return []
     unit = (m.group(3) or "mg").lower()
-    unit = {"milligram": "mg", "milligrams": "mg", "microgram": "mcg", "micrograms": "mcg",
-            "unit": "units"}.get(unit, unit)
+    unit = {
+        "milligram": "mg",
+        "milligrams": "mg",
+        "microgram": "mcg",
+        "micrograms": "mcg",
+        "unit": "units",
+    }.get(unit, unit)
     vals = [float(m.group(1))] + ([float(m.group(2))] if m.group(2) else [])
     return [(v, unit) for v in vals]

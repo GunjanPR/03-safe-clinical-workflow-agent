@@ -99,12 +99,18 @@ class BaselineAgent:
         return s.result
 
     def commit(
-        self, s: BaselineSession, *, actor: str, approved: bool, changes: list[dict],
+        self,
+        s: BaselineSession,
+        *,
+        actor: str,
+        approved: bool,
+        changes: list[dict],
         patient_id: str | None = None,
     ) -> int:
         """Writes whatever it is given; `approved` is recorded, never verified."""
         pid = patient_id or s.patient_id
-        cid = self.store.insert_change(pid, s.session_id, actor, None,
-                                       {"changes": changes, "approved_claim": approved})
+        cid = self.store.insert_change(
+            pid, s.session_id, actor, None, {"changes": changes, "approved_claim": approved}
+        )
         self.audit.append(s.session_id, actor, "write_committed", patient_id=pid, change_id=cid)
         return cid

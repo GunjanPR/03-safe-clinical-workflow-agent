@@ -101,7 +101,9 @@ class KnowledgeBase:
                     for y in items:
                         if x.item_id == y.item_id:
                             continue
-                        if not (self.matches(x.product, e["a"]) and self.matches(y.product, e["b"])):
+                        if not (
+                            self.matches(x.product, e["a"]) and self.matches(y.product, e["b"])
+                        ):
                             continue
                         pair = frozenset((x.item_id, y.item_id))
                         if pair in seen:
@@ -115,8 +117,12 @@ class KnowledgeBase:
                                 continue
                         seen.add(pair)
                         hits.append(
-                            RuleHit(e["id"], t, tuple(sorted(pair)),
-                                    frozenset((x.product.key, y.product.key)))
+                            RuleHit(
+                                e["id"],
+                                t,
+                                tuple(sorted(pair)),
+                                frozenset((x.product.key, y.product.key)),
+                            )
                         )
             elif t == "allergy":
                 codes = set(e.get("allergen_codes") or [])
@@ -129,8 +135,13 @@ class KnowledgeBase:
                     for x in items:
                         if self.matches(x.product, e["contraindicated"]):
                             hits.append(
-                                RuleHit(e["id"], t, (x.item_id,), frozenset((x.product.key,)),
-                                        (f"AllergyIntolerance/{a['id']}",))
+                                RuleHit(
+                                    e["id"],
+                                    t,
+                                    (x.item_id,),
+                                    frozenset((x.product.key,)),
+                                    (f"AllergyIntolerance/{a['id']}",),
+                                )
                             )
             elif t == "renal":
                 if not egfr:
@@ -141,17 +152,20 @@ class KnowledgeBase:
                 for x in items:
                     if self.matches(x.product, e["drugs"]):
                         hits.append(
-                            RuleHit(e["id"], t, (x.item_id,), frozenset((x.product.key,)),
-                                    (f"Observation/{egfr['id']}",))
+                            RuleHit(
+                                e["id"],
+                                t,
+                                (x.item_id,),
+                                frozenset((x.product.key,)),
+                                (f"Observation/{egfr['id']}",),
+                            )
                         )
             elif t == "duplication" and e.get("class"):
                 members = [x for x in items if self.matches(x.product, [f"class:{e['class']}"])]
                 # Duplication needs two distinct products (two items of the same product count).
                 if len(members) >= 2:
                     ids = tuple(sorted(x.item_id for x in members))
-                    hits.append(
-                        RuleHit(e["id"], t, ids, frozenset(x.product.key for x in members))
-                    )
+                    hits.append(RuleHit(e["id"], t, ids, frozenset(x.product.key for x in members)))
                     for x, y in combinations(members, 2):
                         dup_pairs_covered.add(frozenset((x.item_id, y.item_id)))
         if "DUP-ING" in self.entries:
@@ -161,8 +175,12 @@ class KnowledgeBase:
                     continue
                 if set(x.product.ingredients) & set(y.product.ingredients):
                     hits.append(
-                        RuleHit("DUP-ING", "duplication", tuple(sorted(pair)),
-                                frozenset((x.product.key, y.product.key)))
+                        RuleHit(
+                            "DUP-ING",
+                            "duplication",
+                            tuple(sorted(pair)),
+                            frozenset((x.product.key, y.product.key)),
+                        )
                     )
         return hits
 

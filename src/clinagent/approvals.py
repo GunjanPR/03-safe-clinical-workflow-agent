@@ -55,7 +55,13 @@ class ApprovalService:
         return hmac.new(self._secret, payload, hashlib.sha256).hexdigest()
 
     def issue(
-        self, *, session_id: str, patient_id: str, changes: list[dict], approver: str, role: str,
+        self,
+        *,
+        session_id: str,
+        patient_id: str,
+        changes: list[dict],
+        approver: str,
+        role: str,
         now: float | None = None,
     ) -> str:
         if not has_perm(role, Perm.APPROVE_CHANGE):
@@ -74,8 +80,14 @@ class ApprovalService:
         return base64.urlsafe_b64encode(payload).decode() + "." + self._sign(payload)
 
     def validate(
-        self, token: str | None, *, session_id: str, patient_id: str, changes: list[dict],
-        consume: bool = True, now: float | None = None,
+        self,
+        token: str | None,
+        *,
+        session_id: str,
+        patient_id: str,
+        changes: list[dict],
+        consume: bool = True,
+        now: float | None = None,
     ) -> Approval:
         if not token:
             raise ApprovalError("missing_token")

@@ -59,7 +59,7 @@ def _product_brands() -> dict[str, list[str]]:
 
 
 def _clean(s: str) -> str:
-    return re.sub(r"[^a-z0-9/ ]", "", s.lower().replace(",", " "))
+    return re.sub(r"[^a-z0-9/ ]", "", re.sub(r"[\s,;]+", " ", s.lower()))
 
 
 def _names_ingredient(text: str, ing: str) -> bool:
@@ -69,10 +69,17 @@ def _names_ingredient(text: str, ing: str) -> bool:
         f = _clean(form)
         if re.search(rf"(?<![a-z]){re.escape(f)}(?![a-z])", t):
             return True
-        if " " not in f and len(f) >= 6:  # tolerate one typo in long single-word names
-            if any(difflib.SequenceMatcher(None, w, f).ratio() >= 0.8 for w in words
-                   if abs(len(w) - len(f)) <= 2):
-                return True
+        # tolerate one typo in long single-word names
+        if (
+            " " not in f
+            and len(f) >= 6
+            and any(
+                difflib.SequenceMatcher(None, w, f).ratio() >= 0.8
+                for w in words
+                if abs(len(w) - len(f)) <= 2
+            )
+        ):
+            return True
     return False
 
 
@@ -145,7 +152,9 @@ class Verifier:
                 why.append("span out of range")
             else:
                 # include the words right after the name (strength, frequency)
-                span_texts.append((statement[s[0]:s[1]], statement[s[0]:min(len(statement), s[1] + 40)]))
+                span_texts.append(
+                    (statement[s[0] : s[1]], statement[s[0] : min(len(statement), s[1] + 40)])
+                )
         for k in kbids:
             if k not in _entries():
                 why.append(f"unknown KB entry {k}")
@@ -159,22 +168,29 @@ class Verifier:
         cited = not why and bool(fhir or spans or kbids)
         ok = False
         if t == "omission":
-            ok = any(o["status"] == "active" and display_is_product(o["display"], keys[0])
-                     for o in orders) and all(names_product(st, keys[0]) for st, _ in span_texts)
+            ok = any(
+                o["status"] == "active" and display_is_product(o["display"], keys[0])
+                for o in orders
+            ) and all(names_product(st, keys[0]) for st, _ in span_texts)
         elif t == "commission":
-            on_chart = any(display_is_product(m["display"], keys[0])
-                           for m in self._active_orders(pid))
-            ok = bool(span_texts) and any(names_product(st, keys[0]) for st, _ in span_texts) \
+            on_chart = any(
+                display_is_product(m["display"], keys[0]) for m in self._active_orders(pid)
+            )
+            ok = (
+                bool(span_texts)
+                and any(names_product(st, keys[0]) for st, _ in span_texts)
                 and not on_chart
+            )
         elif t == "dose":
             o = next((o for o in orders if display_is_product(o["display"], keys[0])), None)
             ok = bool(o) and any(
-                names_product(st, keys[0]) and (_numbers(win[len(st):]) - _numbers(o["display"]))
+                names_product(st, keys[0]) and (_numbers(win[len(st) :]) - _numbers(o["display"]))
                 for st, win in span_texts
             )
         elif t == "frequency":
-            ok = any(display_is_product(o["display"], keys[0]) and o.get("frequency")
-                     for o in orders) and any(names_product(st, keys[0]) for st, _ in span_texts)
+            ok = any(
+                display_is_product(o["display"], keys[0]) and o.get("frequency") for o in orders
+            ) and any(names_product(st, keys[0]) for st, _ in span_texts)
         elif t in ("interaction", "allergy", "renal", "duplication") and kbids:
             e = _entries().get(kbids[0])
             ok = bool(e) and e["type"] == t and all(backed(k) for k in keys)
@@ -185,17 +201,21 @@ class Verifier:
                     (ings[0] & a and ings[1] & b) or (ings[1] & a and ings[0] & b)
                 )
             elif ok and t == "allergy":
-                alg = [r for ref, r in resources_.items()
-                       if ref.startswith("AllergyIntolerance/")]
+                alg = [r for ref, r in resources_.items() if ref.startswith("AllergyIntolerance/")]
                 terms = [s.lower() for s in e.get("allergen_terms") or []]
-                ok = any(a.get("code") in set(e.get("allergen_codes") or [])
-                         or any(s in a["display"].lower() for s in terms) for a in alg) and \
-                    bool(set(keys[0].split("+")) & _expand(e["contraindicated"]))
+                ok = any(
+                    a.get("code") in set(e.get("allergen_codes") or [])
+                    or any(s in a["display"].lower() for s in terms)
+                    for a in alg
+                ) and bool(set(keys[0].split("+")) & _expand(e["contraindicated"]))
             elif ok and t == "renal":
                 labs = [r for ref, r in resources_.items() if ref.startswith("Observation/")]
-                ok = any(lab.get("kind") == "egfr" and lab["value"] < e["egfr_below"]
-                         and lab["value"] >= e.get("egfr_at_least", -1) for lab in labs) and \
-                    bool(set(keys[0].split("+")) & _expand(e["drugs"]))
+                ok = any(
+                    lab.get("kind") == "egfr"
+                    and lab["value"] < e["egfr_below"]
+                    and lab["value"] >= e.get("egfr_at_least", -1)
+                    for lab in labs
+                ) and bool(set(keys[0].split("+")) & _expand(e["drugs"]))
             elif ok and t == "duplication":
                 # Two products of the same ingredient collapse to one key, so count the
                 # distinct cited orders/spans instead of keys.
@@ -204,16 +224,21 @@ class Verifier:
                     cls = _expand([f"class:{e['class']}"])
                     ok = n_evidence >= 2 and all(set(k.split("+")) & cls for k in keys)
                 else:
-                    ok = n_evidence >= 2 and (len(keys) == 1 or bool(
-                        set(keys[0].split("+")) & set(keys[1].split("+"))))
+                    ok = n_evidence >= 2 and (
+                        len(keys) == 1 or bool(set(keys[0].split("+")) & set(keys[1].split("+")))
+                    )
         ok = bool(ok)
         grounded = cited and ok
         if cited and not ok:
             why.append("cited evidence does not support the claim")
         if not cited and not why:
             why.append("no citations")
-        return {"cited": cited, "supported_by_citations": ok, "grounded": grounded,
-                "why": "; ".join(why)}
+        return {
+            "cited": cited,
+            "supported_by_citations": ok,
+            "grounded": grounded,
+            "why": "; ".join(why),
+        }
 
     def supported(self, f: dict, pid: str, statement: str) -> bool:
         """Citation-free check of diff-type claims against the chart and the statement."""

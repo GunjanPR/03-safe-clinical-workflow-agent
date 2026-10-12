@@ -2,7 +2,7 @@
 name = "clinagent"
 version = "0.1.0"
 description = "Safe medication-reconciliation support agent over synthetic FHIR R4 records"
-requires-python = ">=3.11"
+requires-python = ">=3.11,<3.12"
 dependencies = [
   "fastapi>=0.110",
   "uvicorn[standard]>=0.29",
@@ -37,3 +37,14 @@ pythonpath = ["src"]
 
 [tool.ruff]
 line-length = 100
+target-version = "py311"
+extend-exclude = ["tools", "data"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM"]
+
+[tool.ruff.lint.per-file-ignores]
+"src/clinagent/guard.py" = ["E501"]
+"src/clinagent/parser.py" = ["E501"]  # the LLM prompt text
+"src/clinagent/api.py" = ["B008"]  # FastAPI Depends() idiom
+"src/clinagent/rbac.py" = ["UP042"]

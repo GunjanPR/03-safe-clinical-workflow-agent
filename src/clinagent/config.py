@@ -25,6 +25,8 @@ class Settings(BaseSettings):
     min_confidence: float = 0.55
     # Approval tokens expire after this many seconds.
     approval_ttl_s: int = 900
+    # HMAC key for approval tokens. Unset: a random key per process (tokens die on restart).
+    approval_secret: str | None = None
 
     otel_exporter: str = "none"  # none | console | otlp
 

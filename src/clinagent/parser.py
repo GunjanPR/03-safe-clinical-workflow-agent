@@ -18,7 +18,7 @@ from dataclasses import asdict, dataclass, field
 
 import httpx
 
-from .meds import Lexicon, Product, lexicon, text_per_day, text_strengths, PRN_PATTERN
+from .meds import PRN_PATTERN, Lexicon, Product, lexicon, text_per_day, text_strengths
 
 STOP_CUES = re.compile(
     r"\b(stopped|quit|no longer|not taking|don'?t take|do not take|haven'?t taken|ran out|"
@@ -42,14 +42,103 @@ VAGUE2 = re.compile(
 )
 # Common English words that must never be fuzzy-matched to a drug name.
 _COMMON = set(
-    "about after again against along already also always another around because before being "
-    "below between bottle capsule capsules couple doctor dosage every evening first however "
-    "inhaler little medicine medication morning needed night other pharmacy pills prescribed "
-    "pressure really should since something sometimes still taking tablet tablets these thing "
-    "things those three times twice until usually water where which while would breakfast "
-    "dinner lunch bedtime patient reports stopped started taking months weeks daily weekly "
-    "anymore mostly right cream patch spray shots drops chewable extended release nightly "
-    "label strength unsure think pretty sure maybe probably either never ".split()
+    [
+        "about",
+        "after",
+        "again",
+        "against",
+        "along",
+        "already",
+        "also",
+        "always",
+        "another",
+        "around",
+        "because",
+        "before",
+        "being",
+        "below",
+        "between",
+        "bottle",
+        "capsule",
+        "capsules",
+        "couple",
+        "doctor",
+        "dosage",
+        "every",
+        "evening",
+        "first",
+        "however",
+        "inhaler",
+        "little",
+        "medicine",
+        "medication",
+        "morning",
+        "needed",
+        "night",
+        "other",
+        "pharmacy",
+        "pills",
+        "prescribed",
+        "pressure",
+        "really",
+        "should",
+        "since",
+        "something",
+        "sometimes",
+        "still",
+        "taking",
+        "tablet",
+        "tablets",
+        "these",
+        "thing",
+        "things",
+        "those",
+        "three",
+        "times",
+        "twice",
+        "until",
+        "usually",
+        "water",
+        "where",
+        "which",
+        "while",
+        "would",
+        "breakfast",
+        "dinner",
+        "lunch",
+        "bedtime",
+        "patient",
+        "reports",
+        "stopped",
+        "started",
+        "taking",
+        "months",
+        "weeks",
+        "daily",
+        "weekly",
+        "anymore",
+        "mostly",
+        "right",
+        "cream",
+        "patch",
+        "spray",
+        "shots",
+        "drops",
+        "chewable",
+        "extended",
+        "release",
+        "nightly",
+        "label",
+        "strength",
+        "unsure",
+        "think",
+        "pretty",
+        "sure",
+        "maybe",
+        "probably",
+        "either",
+        "never",
+    ]
 )
 
 
@@ -109,7 +198,7 @@ def _sentence_bounds(text: str, pos: int) -> tuple[int, int]:
 
 def _attributes(text: str, start: int, end: int, next_start: int) -> dict:
     s0, s1 = _sentence_bounds(text, start)
-    window = text[end:min(next_start, s1)]
+    window = text[end : min(next_start, s1)]
     before = text[s0:start]
     # Strength must follow the name closely ("lisinopril 10 mg", "Percocet 5/325").
     head = window[:25]
@@ -150,7 +239,7 @@ def parse_deterministic(text: str, lex: Lexicon | None = None) -> ParseResult:
         nxt = mentions[i + 1].start if i + 1 < len(mentions) else len(text)
         attrs = _attributes(text, m.start, m.end, nxt)
         item = ReportedItem(
-            surface=text[m.start:m.end],
+            surface=text[m.start : m.end],
             ingredients=m.ingredients,
             span=(m.start, m.end),
             match_score=round(m.score, 3),
@@ -158,17 +247,20 @@ def parse_deterministic(text: str, lex: Lexicon | None = None) -> ParseResult:
             **attrs,
         )
         # "Percocet (oxycodone/acetaminophen)": merge mentions inside one product phrase.
-        gap = text[items[-1].span[1]:m.start] if items and items[-1].span else "\n"
-        if items and "\n" not in gap and gap.strip(" (") == "" and set(m.ingredients) <= set(
-            items[-1].ingredients
+        gap = text[items[-1].span[1] : m.start] if items and items[-1].span else "\n"
+        if (
+            items
+            and "\n" not in gap
+            and gap.strip(" (") == ""
+            and set(m.ingredients) <= set(items[-1].ingredients)
         ):
             continue
         # "hydrocodone/acetaminophen 5/325" written generically: join slash-separated generics.
-        between = text[items[-1].span[1]:m.start] if items and items[-1].span else ""
+        between = text[items[-1].span[1] : m.start] if items and items[-1].span else ""
         if items and (between.strip() in ("/", "+") or between == "-") and "\n" not in between:
             prev = items[-1]
             prev.ingredients = tuple(sorted(set(prev.ingredients) | set(m.ingredients)))
-            prev.surface = text[prev.span[0]:m.end]
+            prev.surface = text[prev.span[0] : m.end]
             prev.span = (prev.span[0], m.end)
             for k in ("strengths", "per_day", "prn"):
                 if attrs[k] and not getattr(prev, k):
@@ -211,9 +303,7 @@ class LLMClient:
     def __init__(self, base_url: str, model: str, api_key: str = "x", timeout: float = 60.0):
         self.base_url = base_url.rstrip("/")
         self.model = model
-        self._client = httpx.Client(
-            timeout=timeout, headers={"Authorization": f"Bearer {api_key}"}
-        )
+        self._client = httpx.Client(timeout=timeout, headers={"Authorization": f"Bearer {api_key}"})
 
     def chat_json(self, system: str, user: str) -> tuple[dict, dict]:
         r = self._client.post(
@@ -273,9 +363,7 @@ def parse_llm(text: str, client: LLMClient, lex: Lexicon | None = None) -> Parse
             ings = tuple(sorted({i for f in found for i in f.ingredients}))
             score = 1.0
         else:
-            fm = lex.fuzzy(name) or next(
-                (lex.fuzzy(w) for w in name.split() if lex.fuzzy(w)), None
-            )
+            fm = lex.fuzzy(name) or next((lex.fuzzy(w) for w in name.split() if lex.fuzzy(w)), None)
             if not fm:
                 continue  # not a recognizable medication; the item is dropped
             ings, score = fm.ingredients, fm.score

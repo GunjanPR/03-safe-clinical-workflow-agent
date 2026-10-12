@@ -11,3 +11,4 @@ results/archive/
 tools/
 data/eval_*.db
 data/*.log
+*.egg-info/

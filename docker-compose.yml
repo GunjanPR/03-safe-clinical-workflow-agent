@@ -1,0 +1,50 @@
+# API + Jaeger by default. Optional profiles:
+#   --profile postgres : PostgreSQL store (load it with `make pg-load`)
+#   --profile fhir     : HAPI FHIR R4 server (load it with `make hapi-load`)
+services:
+  api:
+    build: .
+    ports: ["8020:8020"]
+    volumes: ["./data:/app/data"]
+    environment:
+      CLINAGENT_DATABASE_URL: ${CLINAGENT_DATABASE_URL_DOCKER:-sqlite:///data/clinical.db}
+      CLINAGENT_FHIR_BASE_URL: ${CLINAGENT_FHIR_BASE_URL_DOCKER:-}
+      CLINAGENT_LLM_BASE_URL: ${CLINAGENT_LLM_BASE_URL_DOCKER:-http://host.docker.internal:11434/v1}
+      CLINAGENT_LLM_MODEL: ${CLINAGENT_LLM_MODEL:-llama3.2}
+      CLINAGENT_AUDIT_PATH: data/audit.jsonl
+      CLINAGENT_APPROVAL_SECRET: ${CLINAGENT_APPROVAL_SECRET:-change-me}
+      CLINAGENT_OTEL_EXPORTER: otlp
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    depends_on: [jaeger]
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.62.0
+    ports: ["16687:16686", "4319:4318"]
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+
+  postgres:
+    image: postgres:16-alpine
+    profiles: ["postgres"]
+    ports: ["5433:5432"]
+    environment:
+      POSTGRES_USER: clinagent
+      POSTGRES_PASSWORD: clinagent
+      POSTGRES_DB: clinagent
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U clinagent"]
+      interval: 5s
+      retries: 10
+
+  hapi:
+    image: hapiproject/hapi:v7.4.0
+    profiles: ["fhir"]
+    ports: ["8080:8080"]
+    environment:
+      hapi.fhir.fhir_version: R4
+      hapi.fhir.client_id_strategy: ANY
+
+volumes:
+  pgdata:
