@@ -1,0 +1,39 @@
+[project]
+name = "clinagent"
+version = "0.1.0"
+description = "Safe medication-reconciliation support agent over synthetic FHIR R4 records"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi>=0.110",
+  "uvicorn[standard]>=0.29",
+  "sqlalchemy>=2.0",
+  "langgraph>=0.2",
+  "httpx>=0.27",
+  "pydantic>=2.6",
+  "pydantic-settings>=2.2",
+  "pyyaml>=6.0",
+  "opentelemetry-api>=1.24",
+  "opentelemetry-sdk>=1.24",
+]
+
+[project.optional-dependencies]
+postgres = ["psycopg[binary]>=3.1"]
+otlp = ["opentelemetry-exporter-otlp-proto-http>=1.24"]
+dev = ["pytest>=8.0", "ruff>=0.4"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+clinagent = ["knowledge/*.yaml"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 100

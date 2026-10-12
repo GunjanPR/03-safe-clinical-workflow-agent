@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.venv/
+.env
+data/synthea/
+data/*.db
+data/*.sqlite
+results/archive/
+.pytest_cache/
+.ruff_cache/
+tools/
+data/eval_*.db
+data/*.log

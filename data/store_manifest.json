@@ -1,0 +1,19 @@
+{
+  "built_at": "2026-10-12T15:56:09+00:00",
+  "source": "Synthea (master-branch-latest), seed 42, clinician seed 42, -p 5000, Delaware, reference date 2026-01-01, years_of_history=5, only_alive_patients",
+  "database": "sqlite",
+  "counts": {
+    "Patient": 5000,
+    "MedicationRequest": 111078,
+    "AllergyIntolerance": 5353,
+    "Condition": 109612,
+    "Observation": 88326,
+    "active_medication_requests": 12343,
+    "patients_with_active_meds": 3247,
+    "lab_egfr": 22610,
+    "lab_potassium": 32507,
+    "lab_inr": 702,
+    "lab_creatinine": 32507
+  },
+  "row_id_sha256": "9656b4125fd2f4fa7e6e1f9ebff10d8d0357b9e32c70d666d7de9ddefbc02b5e"
+}

@@ -1,0 +1,193 @@
+# Drug lexicon: canonical ingredient -> classes, brand names and other surface forms.
+# Covers every ingredient in the active MedicationRequests of the 5,000-patient Synthea store,
+# plus common OTC products and supplements patients report. DEMO DATA - NOT FOR CLINICAL USE.
+# Classes drive the therapeutic-duplication rules in clinical_kb.yaml.
+
+ingredients:
+  # --- cardiovascular
+  metoprolol: {classes: [beta_blocker], brands: [Lopressor, Toprol XL, Toprol]}
+  atenolol: {classes: [beta_blocker], brands: [Tenormin]}
+  carvedilol: {classes: [beta_blocker], brands: [Coreg]}
+  propranolol: {classes: [beta_blocker], brands: [Inderal]}
+  nebivolol: {classes: [beta_blocker], brands: [Bystolic]}
+  bisoprolol: {classes: [beta_blocker], brands: [Zebeta]}
+  labetalol: {classes: [beta_blocker], brands: [Trandate]}
+  lisinopril: {classes: [ace_inhibitor], brands: [Zestril, Prinivil]}
+  enalapril: {classes: [ace_inhibitor], brands: [Vasotec]}
+  benazepril: {classes: [ace_inhibitor], brands: [Lotensin]}
+  ramipril: {classes: [ace_inhibitor], brands: [Altace]}
+  losartan: {classes: [arb], brands: [Cozaar]}
+  valsartan: {classes: [arb], brands: [Diovan]}
+  irbesartan: {classes: [arb], brands: [Avapro]}
+  telmisartan: {classes: [arb], brands: [Micardis]}
+  sacubitril: {classes: [neprilysin_inhibitor], brands: []}
+  amlodipine: {classes: [ccb_dihydropyridine], brands: [Norvasc]}
+  verapamil: {classes: [ccb_nondihydropyridine], brands: [Calan, Verelan]}
+  hydrochlorothiazide: {classes: [thiazide], brands: [Microzide], synonyms: [HCTZ]}
+  furosemide: {classes: [loop_diuretic], brands: [Lasix]}
+  spironolactone: {classes: [potassium_sparing_diuretic], brands: [Aldactone]}
+  nitroglycerin: {classes: [nitrate], brands: [Nitrostat, Nitrolingual], synonyms: [nitro, NTG]}
+  digoxin: {classes: [cardiac_glycoside], brands: [Lanoxin]}
+  simvastatin: {classes: [statin], brands: [Zocor]}
+  atorvastatin: {classes: [statin], brands: [Lipitor]}
+  rosuvastatin: {classes: [statin], brands: [Crestor]}
+  pravastatin: {classes: [statin], brands: [Pravachol]}
+  lovastatin: {classes: [statin], brands: [Mevacor, Altoprev]}
+  pitavastatin: {classes: [statin], brands: [Livalo]}
+  clopidogrel: {classes: [p2y12_inhibitor, antiplatelet], brands: [Plavix]}
+  prasugrel: {classes: [p2y12_inhibitor, antiplatelet], brands: [Effient]}
+  aspirin: {classes: [antiplatelet, salicylate], brands: [Bayer, Ecotrin, Vazalore], synonyms: [ASA, acetylsalicylic acid, baby aspirin]}
+  warfarin: {classes: [anticoagulant], brands: [Coumadin, Jantoven]}
+  alteplase: {classes: [thrombolytic], brands: [Activase], inpatient_only: true}
+
+  # --- analgesics
+  acetaminophen: {classes: [acetaminophen], brands: [Tylenol], synonyms: [paracetamol, APAP]}
+  ibuprofen: {classes: [nsaid], brands: [Advil, Motrin, Ibu]}
+  naproxen: {classes: [nsaid], brands: [Aleve, Naprosyn, Anaprox]}
+  hydrocodone: {classes: [opioid], brands: [Hysingla, Zohydro]}
+  oxycodone: {classes: [opioid], brands: [OxyContin, Roxicodone]}
+  codeine: {classes: [opioid], brands: []}
+  fentanyl: {classes: [opioid], brands: [Duragesic]}
+  tramadol: {classes: [opioid], brands: [Ultram]}
+  meperidine: {classes: [opioid], brands: [Demerol]}
+  methadone: {classes: [opioid], brands: [Dolophine]}
+  buprenorphine: {classes: [opioid], brands: [Subutex]}
+  naloxone: {classes: [opioid_antagonist], brands: [Narcan]}
+
+  # --- CNS
+  clonazepam: {classes: [benzodiazepine], brands: [Klonopin]}
+  diazepam: {classes: [benzodiazepine], brands: [Valium]}
+  alprazolam: {classes: [benzodiazepine], brands: [Xanax]}
+  fluoxetine: {classes: [ssri], brands: [Prozac]}
+  sertraline: {classes: [ssri], brands: [Zoloft]}
+  carbamazepine: {classes: [anticonvulsant, strong_cyp3a4_inducer], brands: [Tegretol]}
+  duloxetine: {classes: [snri], brands: [Cymbalta]}
+  milnacipran: {classes: [snri], brands: [Savella]}
+  pregabalin: {classes: [gabapentinoid], brands: [Lyrica]}
+  methylphenidate: {classes: [stimulant], brands: [Ritalin, Concerta]}
+  atomoxetine: {classes: [snri_adhd], brands: [Strattera]}
+  donepezil: {classes: [cholinesterase_inhibitor], brands: [Aricept]}
+  galantamine: {classes: [cholinesterase_inhibitor], brands: [Razadyne]}
+  memantine: {classes: [nmda_antagonist], brands: [Namenda]}
+  nicotine: {classes: [nicotine_replacement], brands: [Nicoderm, Habitrol], synonyms: [nicotine patch]}
+  melatonin: {classes: [supplement], brands: []}
+  st johns wort: {classes: [supplement, strong_cyp3a4_inducer], brands: [], synonyms: [St. John's wort, St John's wort, hypericum]}
+
+  # --- antihistamines / respiratory
+  loratadine: {classes: [antihistamine], brands: [Claritin]}
+  cetirizine: {classes: [antihistamine], brands: [Zyrtec]}
+  fexofenadine: {classes: [antihistamine], brands: [Allegra]}
+  diphenhydramine: {classes: [antihistamine, first_gen_antihistamine], brands: [Benadryl], synonyms: [ZzzQuil]}
+  chlorpheniramine: {classes: [antihistamine, first_gen_antihistamine], brands: [Chlor-Trimeton]}
+  doxylamine: {classes: [antihistamine, first_gen_antihistamine], brands: [Unisom]}
+  astemizole: {classes: [antihistamine], brands: [Hismanal]}
+  terfenadine: {classes: [antihistamine], brands: [Seldane]}
+  dextromethorphan: {classes: [antitussive], brands: [Delsym, Robitussin DM]}
+  albuterol: {classes: [saba], brands: [Ventolin, ProAir, Proventil], synonyms: [salbutamol]}
+  levalbuterol: {classes: [saba], brands: [Xopenex]}
+  fluticasone: {classes: [inhaled_corticosteroid], brands: [Flovent]}
+  budesonide: {classes: [inhaled_corticosteroid], brands: [Pulmicort]}
+  beclomethasone: {classes: [inhaled_corticosteroid], brands: [Qvar]}
+  mometasone: {classes: [inhaled_corticosteroid], brands: [Asmanex]}
+  salmeterol: {classes: [laba], brands: [Serevent]}
+  epinephrine: {classes: [epinephrine], brands: [EpiPen, Auvi-Q]}
+
+  # --- endocrine / metabolic
+  metformin: {classes: [biguanide], brands: [Glucophage, Glumetza, Fortamet]}
+  canagliflozin: {classes: [sglt2_inhibitor], brands: [Invokana]}
+  liraglutide: {classes: [glp1_agonist], brands: [Victoza, Saxenda]}
+  insulin human: {classes: [insulin], brands: [Humulin, Novolin], synonyms: [insulin isophane, insulin regular, NPH insulin, insulin 70/30]}
+  levothyroxine: {classes: [thyroid_hormone], brands: [Synthroid, Levoxyl, Unithroid]}
+  alendronate: {classes: [bisphosphonate], brands: [Fosamax], synonyms: [alendronic acid]}
+  allopurinol: {classes: [xanthine_oxidase_inhibitor], brands: [Zyloprim]}
+  ferrous sulfate: {classes: [iron], brands: [Feosol], synonyms: [iron, iron pill, iron sulfate]}
+  cyanocobalamin: {classes: [vitamin_b12], brands: [], synonyms: [vitamin B12, B12, B-12]}
+  vitamin d: {classes: [supplement], brands: [], synonyms: [vitamin D3, cholecalciferol]}
+  fish oil: {classes: [supplement], brands: [Lovaza], synonyms: [omega-3, omega 3]}
+  potassium chloride: {classes: [potassium_supplement], brands: [K-Dur, Klor-Con], synonyms: [potassium pill, KCl]}
+
+  # --- hormonal contraceptives
+  ethinyl estradiol: {classes: [estrogen, hormonal_contraceptive], brands: []}
+  estradiol: {classes: [estrogen, hormonal_contraceptive], brands: []}
+  levonorgestrel: {classes: [progestin, hormonal_contraceptive], brands: []}
+  norethindrone: {classes: [progestin, hormonal_contraceptive], brands: []}
+  norgestimate: {classes: [progestin, hormonal_contraceptive], brands: []}
+  drospirenone: {classes: [progestin, hormonal_contraceptive], brands: []}
+  dienogest: {classes: [progestin, hormonal_contraceptive], brands: []}
+  etonogestrel: {classes: [progestin, hormonal_contraceptive], brands: []}
+  norelgestromin: {classes: [progestin, hormonal_contraceptive], brands: []}
+
+  # --- anti-infective / immunology / other
+  amoxicillin: {classes: [penicillin], brands: [Amoxil]}
+  clavulanate: {classes: [beta_lactamase_inhibitor], brands: []}
+  penicillin v: {classes: [penicillin], brands: [Pen VK], synonyms: [penicillin]}
+  cefdinir: {classes: [cephalosporin], brands: [Omnicef]}
+  cephalexin: {classes: [cephalosporin], brands: [Keflex]}
+  cefuroxime: {classes: [cephalosporin], brands: [Ceftin]}
+  cefpodoxime: {classes: [cephalosporin], brands: [Vantin]}
+  azithromycin: {classes: [macrolide], brands: [Zithromax, Z-Pak]}
+  ciprofloxacin: {classes: [fluoroquinolone], brands: [Cipro]}
+  nitrofurantoin: {classes: [urinary_antiseptic], brands: [Macrobid, Macrodantin]}
+  fosfomycin: {classes: [urinary_antiseptic], brands: [Monurol]}
+  clindamycin: {classes: [lincosamide], brands: [Cleocin]}
+  cyclosporine: {classes: [calcineurin_inhibitor], brands: [Neoral, Gengraf, Sandimmune]}
+  colchicine: {classes: [antigout], brands: [Colcrys]}
+  sodium chloride: {classes: [electrolyte], brands: [], synonyms: [normal saline, saline], inpatient_only: true}
+  doxycycline: {classes: [tetracycline], brands: [Vibramycin, Doryx]}
+  sulfamethoxazole: {classes: [sulfonamide_antibiotic], brands: []}
+  trimethoprim: {classes: [antifolate_antibiotic], brands: []}
+  emtricitabine: {classes: [nrti], brands: [Emtriva]}
+  tenofovir: {classes: [nrti], brands: [Viread]}
+  lamivudine: {classes: [nrti], brands: [Epivir]}
+  dolutegravir: {classes: [integrase_inhibitor], brands: [Tivicay]}
+  raltegravir: {classes: [integrase_inhibitor], brands: [Isentress]}
+  elvitegravir: {classes: [integrase_inhibitor], brands: []}
+  darunavir: {classes: [protease_inhibitor], brands: [Prezista]}
+  ritonavir: {classes: [protease_inhibitor, strong_cyp3a4_inhibitor], brands: [Norvir]}
+  cobicistat: {classes: [strong_cyp3a4_inhibitor], brands: [Tybost]}
+  tacrolimus: {classes: [calcineurin_inhibitor], brands: [Prograf, Envarsus, Astagraf]}
+  methotrexate: {classes: [antimetabolite], brands: [Trexall, Otrexup]}
+  hydrocortisone: {classes: [topical_corticosteroid], brands: [Cortaid, Cortizone]}
+  glycopyrrolate: {classes: [anticholinergic], brands: [Robinul, Glycate]}
+  omeprazole: {classes: [ppi], brands: [Prilosec]}
+  famotidine: {classes: [h2_blocker], brands: [Pepcid]}
+  calcium carbonate: {classes: [antacid], brands: [Tums]}
+
+# Multi-ingredient brand names -> the ingredient set they contain.
+products:
+  Percocet: [oxycodone, acetaminophen]
+  Endocet: [oxycodone, acetaminophen]
+  Norco: [hydrocodone, acetaminophen]
+  Vicodin: [hydrocodone, acetaminophen]
+  Tylenol with Codeine: [codeine, acetaminophen]
+  Tylenol 3: [codeine, acetaminophen]
+  Augmentin: [amoxicillin, clavulanate]
+  Advair: [fluticasone, salmeterol]
+  Bactrim: [sulfamethoxazole, trimethoprim]
+  Septra: [sulfamethoxazole, trimethoprim]
+  Truvada: [emtricitabine, tenofovir]
+  Descovy: [emtricitabine, tenofovir]
+  Genvoya: [cobicistat, elvitegravir, emtricitabine, tenofovir]
+  Suboxone: [buprenorphine, naloxone]
+  Namzaric: [donepezil, memantine]
+  Entresto: [sacubitril, valsartan]
+  Zestoretic: [lisinopril, hydrochlorothiazide]
+  Hyzaar: [losartan, hydrochlorothiazide]
+  Diovan HCT: [valsartan, hydrochlorothiazide]
+  Lotrel: [amlodipine, benazepril]
+  NyQuil: [acetaminophen, dextromethorphan, doxylamine]
+  Levora: [ethinyl estradiol, levonorgestrel]
+  Seasonique: [ethinyl estradiol, levonorgestrel]
+  Trinessa: [ethinyl estradiol, norgestimate]
+  Yaz: [drospirenone, ethinyl estradiol]
+  Natazia: [dienogest, estradiol]
+  NuvaRing: [ethinyl estradiol, etonogestrel]
+  Xulane: [ethinyl estradiol, norelgestromin]
+  Jolivette: [norethindrone]
+  Errin: [norethindrone]
+  Camila: [norethindrone]
+
+# Salt and modifier words dropped when matching a product display to its ingredients.
+salt_words: [hydrochloride, succinate, tartrate, sodium, potassium, calcium, maleate, besylate,
+  bitartrate, phosphate, hyclate, fumarate, disoproxil, alafenamide, valerate, propionate,
+  furoate, dipropionate, medoxomil, hydrobromide, acid]

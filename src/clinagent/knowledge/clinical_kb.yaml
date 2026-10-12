@@ -1,0 +1,692 @@
+# Curated "trusted clinical reference" knowledge base for the reconciliation agent.
+#
+# DEMO ONLY - NOT FOR CLINICAL USE. Entries are short paraphrases written by an AI (Claude)
+# from public sources (FDA prescribing information on DailyMed, AGS Beers Criteria 2023,
+# NIH/NCCIH fact sheets, FDA Drug Safety Communications). They have not been reviewed by a
+# pharmacist, are deliberately incomplete, and simplify thresholds (for example eGFR is used
+# as a stand-in where labels specify creatinine clearance).
+#
+# Selectors: a plain name is a canonical ingredient from drug_lexicon.yaml; "class:<x>" is
+# every ingredient with that class.
+#
+# Rule types
+#   interaction : any active product matching `a` together with a different product matching `b`
+#                 optional `dose_limit`: fires only if `drug`'s daily dose exceeds `max_daily_mg`
+#   allergy     : patient has an active allergy matching `allergen_codes`/`allergen_terms` and an
+#                 active product matching `contraindicated`
+#   renal       : latest eGFR < `egfr_below` (and >= `egfr_at_least` if given) with an active
+#                 product matching `drugs`
+#   duplication : two or more distinct active products matching `class`
+#                 (DUP-ING: two products sharing an ingredient not covered by a class rule)
+
+entries:
+  # ------------------------------------------------------------------ drug interactions
+  - id: INT-001
+    type: interaction
+    title: Warfarin with NSAIDs
+    a: [warfarin]
+    b: [class:nsaid]
+    severity: major
+    evidence: >-
+      NSAIDs increase the risk of bleeding when taken with warfarin; the warfarin label lists
+      NSAIDs among drugs that increase bleeding risk and advises close INR and bleeding monitoring.
+    recommendation: Avoid the NSAID if possible (consider acetaminophen); if unavoidable, monitor INR and for bleeding.
+    source: {document: "COUMADIN (warfarin sodium) prescribing information", section: "5.1 Hemorrhage; 7 Drug Interactions", publisher: FDA/DailyMed, url: "https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=warfarin"}
+  - id: INT-002
+    type: interaction
+    title: Warfarin with antiplatelet agents
+    a: [warfarin]
+    b: [class:antiplatelet]
+    severity: major
+    evidence: >-
+      Antiplatelet agents such as aspirin, clopidogrel and prasugrel add to warfarin's bleeding
+      risk; the label calls for monitoring when they are combined.
+    recommendation: Confirm the combination is intended (e.g., recent stent) and document the indication; monitor for bleeding.
+    source: {document: "COUMADIN (warfarin sodium) prescribing information", section: "7 Drug Interactions", publisher: FDA/DailyMed, url: "https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=warfarin"}
+  - id: INT-003
+    type: interaction
+    title: Warfarin with SSRIs
+    a: [warfarin]
+    b: [class:ssri]
+    severity: moderate
+    evidence: >-
+      SSRIs impair platelet serotonin uptake and increase bleeding risk with warfarin; fluoxetine
+      and sertraline labels warn about bleeding with anticoagulants.
+    recommendation: Monitor INR and for signs of bleeding after starting or changing the SSRI.
+    source: {document: "PROZAC (fluoxetine) prescribing information", section: "5.5 Abnormal Bleeding", publisher: FDA/DailyMed, url: "https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=fluoxetine"}
+  - id: INT-004
+    type: interaction
+    title: P2Y12 inhibitors with NSAIDs
+    a: [class:p2y12_inhibitor]
+    b: [class:nsaid]
+    severity: major
+    evidence: >-
+      Coadministration of clopidogrel or prasugrel with NSAIDs increases the risk of
+      gastrointestinal bleeding.
+    recommendation: Avoid routine NSAID use; prefer acetaminophen for pain and consider GI protection.
+    source: {document: "PLAVIX (clopidogrel) prescribing information", section: "7 Drug Interactions (NSAIDs)", publisher: FDA/DailyMed, url: "https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=clopidogrel"}
+  - id: INT-005
+    type: interaction
+    title: Opioids with benzodiazepines
+    a: [class:opioid]
+    b: [class:benzodiazepine]
+    severity: major
+    evidence: >-
+      Concomitant opioids and benzodiazepines can cause profound sedation, respiratory depression,
+      coma and death (FDA boxed warning on opioid and benzodiazepine labels, 2016).
+    recommendation: Reserve the combination for patients without alternatives; use the lowest doses, monitor, and consider naloxone.
+    source: {document: "FDA Drug Safety Communication: boxed warning for opioids with benzodiazepines (2016)", section: "Boxed Warning", publisher: FDA, url: "https://www.fda.gov/drugs/drug-safety-and-availability"}
+  - id: INT-006
+    type: interaction
+    title: Opioids with sedating antihistamines
+    a: [class:opioid]
+    b: [class:first_gen_antihistamine]
+    severity: moderate
+    evidence: >-
+      Opioid labels warn that other CNS depressants, including sedating antihistamines, add to
+      sedation and respiratory depression.
+    recommendation: Counsel on sedation; prefer a non-sedating antihistamine.
+    source: {document: "Opioid analgesic class labeling (e.g., hydrocodone/acetaminophen)", section: "Warnings: interactions with CNS depressants", publisher: FDA/DailyMed, url: "https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=hydrocodone"}
+  - id: INT-007
+    type: interaction
+    title: Tramadol with SSRIs or SNRIs
+    a: [tramadol]
+    b: [class:ssri, class:snri]
+    severity: major
+    evidence: >-
+      Tramadol with serotonergic drugs such as SSRIs can cause serotonin syndrome and lowers the
+      seizure threshold; fluoxetine also inhibits CYP2D6 activation of tramadol.
+    recommendation: Consider an alternative analgesic; if combined, monitor for serotonin syndrome and seizures.
+    source: {document: "ULTRAM (tramadol) prescribing information", section: "5 Warnings: Serotonin Syndrome; Seizure Risk", publisher: FDA/DailyMed, url: "https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=tramadol"}
+  - id: INT-008
+    type: interaction
+    title: Meperidine with SSRIs or SNRIs
+    a: [meperidine]
+    b: [class:ssri, class:snri]
+    severity: major
+    evidence: >-
+      Meperidine with serotonergic drugs can precipitate serotonin syndrome.
+    recommendation: Avoid; choose a non-serotonergic opioid if one is needed.
+    source: {document: "DEMEROL (meperidine) prescribing information", section: "Warnings: Serotonin Syndrome", publisher: FDA/DailyMed, url: "https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=meperidine"}
+  - id: INT-009
+    type: interaction
+    title: Simvastatin above 20 mg with amlodipine
+    a: [simvastatin]
+    b: [amlodipine]
+    dose_limit: {drug: simvastatin, max_daily_mg: 20}
+    severity: major
+    evidence: >-
+      With amlodipine, the simvastatin dose should not exceed 20 mg daily because of increased
+      risk of myopathy and rhabdomyolysis.
+    recommendation: Reduce simvastatin to 20 mg daily or switch to a statin less affected (e.g., rosuvastatin).
+    source: {document: "ZOCOR (simvastatin) prescribing information", section: "2 Dosage; 7 Drug Interactions (amlodipine)", publisher: FDA/DailyMed, url: "https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=simvastatin"}
+  - id: INT-010
+    type: interaction
+    title: Simvastatin above 10 mg with verapamil
+    a: [simvastatin]
+    b: [verapamil]
+    dose_limit: {drug: simvastatin, max_daily_mg: 10}
+    severity: major
+    evidence: >-
+      With verapamil, the simvastatin dose should not exceed 10 mg daily (myopathy risk).
+    recommendation: Reduce simvastatin to 10 mg daily or use a different statin.
+    source: {document: "ZOCOR (simvastatin) prescribing information", section: "2 Dosage; 7 Drug Interactions (verapamil)", publisher: FDA/DailyMed, url: "https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=simvastatin"}
+  - id: INT-011
+    type: interaction
+    title: Lovastatin above 20 mg with verapamil
+    a: [lovastatin]
+    b: [verapamil]
+    dose_limit: {drug: lovastatin, max_daily_mg: 20}
+    severity: major
+    evidence: >-
+      With verapamil, the lovastatin dose should not exceed 20 mg daily (myopathy risk).
+    recommendation: Reduce lovastatin to 20 mg daily or use a different statin.
+    source: {document: "Lovastatin tablets prescribing information", section: "Dosage and Administration; Drug Interactions", publisher: FDA/DailyMed, url: "https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=lovastatin"}
+  - id: INT-012
+    type: interaction
+    title: Simvastatin or lovastatin with strong CYP3A4 inhibitors
+    a: [simvastatin, lovastatin]
+    b: [class:strong_cyp3a4_inhibitor, darunavir]
+    severity: contraindicated
+    evidence: >-
+      Strong CYP3A4 inhibitors, including HIV protease inhibitors and cobicistat-containing
+      products, are contraindicated with simvastatin and lovastatin (rhabdomyolysis).
+    recommendation: Stop simvastatin/lovastatin; use a statin not dependent on CYP3A4 (e.g., pravastatin, rosuvastatin at a reduced dose).
+    source: {document: "ZOCOR (simvastatin) prescribing information", section: "4 Contraindications", publisher: FDA/DailyMed, url: "https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=simvastatin"}
+  - id: INT-013
+    type: interaction
+    title: Digoxin with verapamil
+    a: [digoxin]
+    b: [verapamil]
+    severity: major
+    evidence: >-
+      Verapamil raises serum digoxin concentrations and both slow AV conduction; the combination
+      can cause bradycardia and heart block.
+    recommendation: Measure digoxin level, consider reducing digoxin, and monitor heart rate.
+    source: {document: "LANOXIN (digoxin) prescribing information", section: "7 Drug Interactions", publisher: FDA/DailyMed, url: "https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=digoxin"}
+  - id: INT-014
+    type: interaction
+    title: Beta-blockers with verapamil
+    a: [class:beta_blocker]
+    b: [verapamil]
+    severity: major
+    evidence: >-
+      Verapamil with beta-blockers has additive negative effects on heart rate, AV conduction and
+      contractility (bradycardia, heart block, heart failure).
+    recommendation: Confirm the combination is intended; monitor heart rate and blood pressure.
+    source: {document: "CALAN (verapamil) prescribing information", section: "Precautions: Drug Interactions (beta-adrenergic blockers)", publisher: FDA/DailyMed, url: "https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=verapamil"}
+  - id: INT-015
+    type: interaction
+    title: Dual RAAS blockade (ACE inhibitor with ARB)
+    a: [class:ace_inhibitor]
+    b: [class:arb]
+    severity: major
+    evidence: >-
+      Dual blockade of the renin-angiotensin system increases the risk of hypotension,
+      hyperkalemia and renal impairment compared with monotherapy.
+    recommendation: Avoid combined ACE inhibitor and ARB; keep one agent.
+    source: {document: "ZESTRIL (lisinopril) prescribing information", section: "Drug Interactions: Dual Blockade of the RAS", publisher: FDA/DailyMed, url: "https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=lisinopril"}
+  - id: INT-016
+    type: interaction
+    title: ACE inhibitor with sacubitril/valsartan
+    a: [class:ace_inhibitor]
+    b: [sacubitril]
+    severity: contraindicated
+    evidence: >-
+      Sacubitril/valsartan is contraindicated with ACE inhibitors (angioedema); allow a 36-hour
+      washout when switching.
+    recommendation: Stop the ACE inhibitor at least 36 hours before sacubitril/valsartan.
+    source: {document: "ENTRESTO (sacubitril/valsartan) prescribing information", section: "4 Contraindications", publisher: FDA/DailyMed, url: "https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=entresto"}
+  - id: INT-017
+    type: interaction
+    title: ACE inhibitor or ARB with potassium-sparing diuretics or potassium supplements
+    a: [class:ace_inhibitor, class:arb]
+    b: [class:potassium_sparing_diuretic, class:potassium_supplement]
+    severity: major
+    evidence: >-
+      Potassium-sparing diuretics and potassium supplements with ACE inhibitors or ARBs can cause
+      hyperkalemia.
+    recommendation: Check serum potassium and renal function; avoid the supplement unless potassium is low.
+    source: {document: "ZESTRIL (lisinopril) prescribing information", section: "Drug Interactions: potassium-sparing diuretics and supplements", publisher: FDA/DailyMed, url: "https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=lisinopril"}
+  - id: INT-018
+    type: interaction
+    title: Tacrolimus with verapamil
+    a: [tacrolimus]
+    b: [verapamil]
+    severity: major
+    evidence: >-
+      CYP3A inhibitors such as verapamil increase tacrolimus concentrations (nephrotoxicity,
+      neurotoxicity, QT prolongation).
+    recommendation: Monitor tacrolimus trough levels and adjust the dose.
+    source: {document: "PROGRAF (tacrolimus) prescribing information", section: "7 Drug Interactions (CYP3A inhibitors)", publisher: FDA/DailyMed, url: "https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=tacrolimus"}
+  - id: INT-019
+    type: interaction
+    title: Carbamazepine with hormonal contraceptives
+    a: [carbamazepine]
+    b: [class:hormonal_contraceptive]
+    severity: major
+    evidence: >-
+      Carbamazepine induces the metabolism of hormonal contraceptives and can make them
+      ineffective (breakthrough bleeding, unintended pregnancy).
+    recommendation: Counsel on a non-hormonal or additional contraceptive method.
+    source: {document: "TEGRETOL (carbamazepine) prescribing information", section: "Drug Interactions: hormonal contraceptives", publisher: FDA/DailyMed, url: "https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=carbamazepine"}
+  - id: INT-020
+    type: interaction
+    title: St. John's wort with hormonal contraceptives
+    a: [st johns wort]
+    b: [class:hormonal_contraceptive]
+    severity: major
+    evidence: >-
+      St. John's wort induces drug metabolism and can reduce the effectiveness of birth control
+      pills.
+    recommendation: Advise stopping St. John's wort or using a backup contraceptive method.
+    source: {document: "St. John's Wort fact sheet", section: "Safety", publisher: NIH NCCIH, url: "https://www.nccih.nih.gov/health/st-johns-wort"}
+  - id: INT-021
+    type: interaction
+    title: St. John's wort with warfarin
+    a: [st johns wort]
+    b: [warfarin]
+    severity: major
+    evidence: >-
+      St. John's wort can lower the effect of warfarin by speeding its metabolism.
+    recommendation: Advise stopping St. John's wort; monitor INR closely if it was stopped or started.
+    source: {document: "St. John's Wort fact sheet", section: "Safety", publisher: NIH NCCIH, url: "https://www.nccih.nih.gov/health/st-johns-wort"}
+  - id: INT-022
+    type: interaction
+    title: St. John's wort with SSRIs
+    a: [st johns wort]
+    b: [class:ssri]
+    severity: major
+    evidence: >-
+      Combining St. John's wort with SSRI antidepressants can cause serotonin syndrome.
+    recommendation: Advise stopping St. John's wort.
+    source: {document: "St. John's Wort fact sheet", section: "Safety", publisher: NIH NCCIH, url: "https://www.nccih.nih.gov/health/st-johns-wort"}
+  - id: INT-023
+    type: interaction
+    title: Methotrexate with NSAIDs
+    a: [methotrexate]
+    b: [class:nsaid]
+    severity: major
+    evidence: >-
+      NSAIDs can reduce methotrexate clearance and increase its toxicity (bone marrow
+      suppression, GI toxicity).
+    recommendation: Avoid or monitor blood counts and renal function closely.
+    source: {document: "Methotrexate tablets prescribing information", section: "Drug Interactions (NSAIDs)", publisher: FDA/DailyMed, url: "https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=methotrexate"}
+  - id: INT-024
+    type: interaction
+    title: Low-dose aspirin with NSAIDs
+    a: [aspirin]
+    b: [class:nsaid]
+    severity: moderate
+    evidence: >-
+      Ibuprofen and other NSAIDs can interfere with the antiplatelet effect of low-dose aspirin
+      and the combination raises GI bleeding risk.
+    recommendation: Separate dosing (aspirin first) or use acetaminophen; consider GI protection.
+    source: {document: "FDA information for healthcare professionals: concomitant use of ibuprofen and aspirin (2006)", section: "Recommendations", publisher: FDA, url: "https://www.fda.gov/drugs/drug-safety-and-availability"}
+  - id: INT-025
+    type: interaction
+    title: Alendronate with NSAIDs
+    a: [alendronate]
+    b: [class:nsaid]
+    severity: minor
+    evidence: >-
+      NSAIDs and aspirin can add to the upper gastrointestinal irritation caused by alendronate.
+    recommendation: Counsel on GI symptoms; take alendronate exactly as directed.
+    source: {document: "FOSAMAX (alendronate) prescribing information", section: "7 Drug Interactions (aspirin, NSAIDs)", publisher: FDA/DailyMed, url: "https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=alendronate"}
+  - id: INT-026
+    type: interaction
+    title: SSRIs with NSAIDs or aspirin
+    a: [class:ssri]
+    b: [class:nsaid, aspirin]
+    severity: moderate
+    evidence: >-
+      SSRIs combined with NSAIDs or aspirin increase the risk of bleeding, especially GI bleeding.
+    recommendation: Consider GI protection or acetaminophen; monitor for bleeding.
+    source: {document: "ZOLOFT (sertraline) prescribing information", section: "5 Warnings: Increased Risk of Bleeding", publisher: FDA/DailyMed, url: "https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=sertraline"}
+  - id: INT-027
+    type: interaction
+    title: NSAIDs with ACE inhibitors or ARBs
+    a: [class:nsaid]
+    b: [class:ace_inhibitor, class:arb]
+    severity: moderate
+    evidence: >-
+      NSAIDs can blunt the antihypertensive effect of ACE inhibitors and ARBs and, in older,
+      volume-depleted or renally impaired patients, worsen renal function.
+    recommendation: Prefer acetaminophen; if an NSAID is needed, monitor blood pressure and renal function.
+    source: {document: "ZESTRIL (lisinopril) prescribing information", section: "Drug Interactions: NSAIDs including COX-2 inhibitors", publisher: FDA/DailyMed, url: "https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=lisinopril"}
+  - id: INT-028
+    type: interaction
+    title: Metoprolol with fluoxetine
+    a: [metoprolol]
+    b: [fluoxetine]
+    severity: minor
+    evidence: >-
+      Potent CYP2D6 inhibitors such as fluoxetine raise metoprolol concentrations.
+    recommendation: Monitor heart rate and blood pressure.
+    source: {document: "LOPRESSOR (metoprolol) prescribing information", section: "Drug Interactions: CYP2D6 inhibitors", publisher: FDA/DailyMed, url: "https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=metoprolol"}
+
+  # ------------------------------------------------------------------ allergy cross-reactivity
+  - id: ALG-001
+    type: allergy
+    title: Penicillin allergy with penicillins
+    allergen_codes: ["7984"]
+    allergen_terms: [penicillin]
+    contraindicated: [class:penicillin]
+    severity: contraindicated
+    evidence: >-
+      Penicillin-class antibiotics such as amoxicillin are contraindicated in patients with a
+      history of serious hypersensitivity to penicillins.
+    recommendation: Do not give; choose a non-beta-lactam antibiotic or refer for allergy evaluation.
+    source: {document: "AMOXIL (amoxicillin) prescribing information", section: "4 Contraindications", publisher: FDA/DailyMed, url: "https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=amoxicillin"}
+  - id: ALG-002
+    type: allergy
+    title: Penicillin allergy with cephalosporins
+    allergen_codes: ["7984"]
+    allergen_terms: [penicillin]
+    contraindicated: [class:cephalosporin]
+    severity: moderate
+    evidence: >-
+      Cross-hypersensitivity between penicillins and cephalosporins is documented; cephalosporins
+      should be given cautiously to penicillin-allergic patients.
+    recommendation: Use with caution and only if the penicillin reaction was not severe; monitor.
+    source: {document: "OMNICEF (cefdinir) prescribing information", section: "Warnings: hypersensitivity reactions", publisher: FDA/DailyMed, url: "https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=cefdinir"}
+  - id: ALG-003
+    type: allergy
+    title: Cephalosporin allergy with cephalosporins
+    allergen_codes: ["25037"]
+    allergen_terms: [cefdinir, cephalosporin]
+    contraindicated: [class:cephalosporin]
+    severity: contraindicated
+    evidence: >-
+      Cephalosporins are contraindicated in patients with known allergy to the cephalosporin
+      class.
+    recommendation: Do not give; choose another class.
+    source: {document: "OMNICEF (cefdinir) prescribing information", section: "Contraindications", publisher: FDA/DailyMed, url: "https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=cefdinir"}
+  - id: ALG-004
+    type: allergy
+    title: Cephalosporin allergy with penicillins
+    allergen_codes: ["25037"]
+    allergen_terms: [cefdinir, cephalosporin]
+    contraindicated: [class:penicillin]
+    severity: moderate
+    evidence: >-
+      Beta-lactam cross-sensitivity means penicillins should be used cautiously in patients
+      allergic to cephalosporins.
+    recommendation: Use with caution; consider allergy referral.
+    source: {document: "OMNICEF (cefdinir) prescribing information", section: "Warnings: hypersensitivity reactions", publisher: FDA/DailyMed, url: "https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=cefdinir"}
+  - id: ALG-005
+    type: allergy
+    title: Aspirin allergy with aspirin and NSAIDs
+    allergen_codes: ["1191"]
+    allergen_terms: [aspirin]
+    contraindicated: [aspirin, class:nsaid]
+    severity: contraindicated
+    evidence: >-
+      NSAIDs are contraindicated in patients who have had asthma, urticaria or allergic-type
+      reactions after taking aspirin or other NSAIDs.
+    recommendation: Stop the aspirin/NSAID; use acetaminophen for pain and review antiplatelet needs with the prescriber.
+    source: {document: "NSAID class labeling (e.g., naproxen, ibuprofen)", section: "4 Contraindications", publisher: FDA/DailyMed, url: "https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=naproxen"}
+  - id: ALG-006
+    type: allergy
+    title: Ibuprofen allergy with NSAIDs and aspirin
+    allergen_codes: ["5640"]
+    allergen_terms: [ibuprofen]
+    contraindicated: [class:nsaid, aspirin]
+    severity: contraindicated
+    evidence: >-
+      Patients with allergic-type reactions to an NSAID should not receive NSAIDs or aspirin
+      because of cross-reactivity.
+    recommendation: Stop the NSAID/aspirin; use acetaminophen.
+    source: {document: "ibuprofen prescribing information", section: "4 Contraindications", publisher: FDA/DailyMed, url: "https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=ibuprofen"}
+  - id: ALG-007
+    type: allergy
+    title: ACE inhibitor allergy (angioedema) with ACE inhibitors
+    allergen_codes: ["29046"]
+    allergen_terms: [lisinopril]
+    contraindicated: [class:ace_inhibitor, sacubitril]
+    severity: contraindicated
+    evidence: >-
+      ACE inhibitors are contraindicated in patients with a history of angioedema or
+      hypersensitivity related to previous ACE inhibitor treatment; sacubitril/valsartan is
+      contraindicated with a history of ACE-inhibitor angioedema.
+    recommendation: Stop; choose a non-ACE-inhibitor antihypertensive and document the reaction.
+    source: {document: "ZESTRIL (lisinopril) prescribing information", section: "4 Contraindications", publisher: FDA/DailyMed, url: "https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=lisinopril"}
+  - id: ALG-008
+    type: allergy
+    title: Sulfonamide antibiotic allergy with sulfamethoxazole
+    allergen_codes: ["10831"]
+    allergen_terms: [sulfamethoxazole, sulfa]
+    contraindicated: [sulfamethoxazole]
+    severity: contraindicated
+    evidence: >-
+      Sulfamethoxazole/trimethoprim is contraindicated in patients with known hypersensitivity
+      to trimethoprim or sulfonamides.
+    recommendation: Do not give; choose another antibiotic.
+    source: {document: "BACTRIM (sulfamethoxazole/trimethoprim) prescribing information", section: "Contraindications", publisher: FDA/DailyMed, url: "https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=bactrim"}
+
+  # ------------------------------------------------------------------ renal dose limits
+  - id: REN-001
+    type: renal
+    title: Metformin with eGFR below 30
+    drugs: [metformin]
+    egfr_below: 30
+    severity: contraindicated
+    evidence: >-
+      Metformin is contraindicated with eGFR below 30 mL/min/1.73 m2 (lactic acidosis risk).
+    recommendation: Stop metformin and choose another glucose-lowering agent.
+    source: {document: "GLUCOPHAGE (metformin) prescribing information", section: "4 Contraindications; 5.1 Lactic Acidosis", publisher: FDA/DailyMed, url: "https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=metformin"}
+  - id: REN-002
+    type: renal
+    title: Metformin with eGFR 30 to 44
+    drugs: [metformin]
+    egfr_below: 45
+    egfr_at_least: 30
+    severity: moderate
+    evidence: >-
+      Starting metformin is not recommended with eGFR 30-45; in patients already taking it whose
+      eGFR falls below 45, assess benefit and risk.
+    recommendation: Reassess the need for metformin and consider a dose reduction; recheck renal function.
+    source: {document: "GLUCOPHAGE (metformin) prescribing information", section: "2.3 Recommended Dosage in Renal Impairment", publisher: FDA/DailyMed, url: "https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=metformin"}
+  - id: REN-003
+    type: renal
+    title: NSAIDs with severe renal impairment
+    drugs: [class:nsaid]
+    egfr_below: 30
+    severity: major
+    evidence: >-
+      AGS Beers Criteria advise avoiding non-COX-selective NSAIDs when creatinine clearance is
+      below 30 mL/min (risk of acute kidney injury and further decline).
+    recommendation: Stop the NSAID; use acetaminophen or topical alternatives.
+    source: {document: "American Geriatrics Society 2023 Updated AGS Beers Criteria", section: "Table 6: drugs to avoid or adjust by kidney function", publisher: AGS (J Am Geriatr Soc 2023), url: "https://doi.org/10.1111/jgs.18372"}
+  - id: REN-004
+    type: renal
+    title: Tramadol with creatinine clearance below 30
+    drugs: [tramadol]
+    egfr_below: 30
+    severity: moderate
+    evidence: >-
+      With creatinine clearance below 30 mL/min, the tramadol dosing interval should be
+      extended to every 12 hours with a maximum of 200 mg per day.
+    recommendation: Limit to every 12 hours, max 200 mg/day.
+    source: {document: "ULTRAM (tramadol) prescribing information", section: "2 Dosage in Renal Impairment", publisher: FDA/DailyMed, url: "https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=tramadol"}
+  - id: REN-005
+    type: renal
+    title: Alendronate with creatinine clearance below 35
+    drugs: [alendronate]
+    egfr_below: 35
+    severity: moderate
+    evidence: >-
+      Alendronate is not recommended when creatinine clearance is below 35 mL/min.
+    recommendation: Stop alendronate and discuss alternatives for bone health.
+    source: {document: "FOSAMAX (alendronate) prescribing information", section: "2 Dosage: renal impairment", publisher: FDA/DailyMed, url: "https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=alendronate"}
+  - id: REN-006
+    type: renal
+    title: Canagliflozin with eGFR below 30
+    drugs: [canagliflozin]
+    egfr_below: 30
+    severity: moderate
+    evidence: >-
+      Initiating canagliflozin is not recommended with eGFR below 30 mL/min/1.73 m2.
+    recommendation: Review indication with the prescriber.
+    source: {document: "INVOKANA (canagliflozin) prescribing information", section: "2 Dosage in Renal Impairment", publisher: FDA/DailyMed, url: "https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=canagliflozin"}
+  - id: REN-007
+    type: renal
+    title: Meperidine with renal impairment
+    drugs: [meperidine]
+    egfr_below: 30
+    severity: major
+    evidence: >-
+      Meperidine's metabolite normeperidine accumulates in renal impairment and can cause
+      seizures; the Beers Criteria advise avoiding meperidine.
+    recommendation: Use a different opioid if one is needed.
+    source: {document: "American Geriatrics Society 2023 Updated AGS Beers Criteria", section: "Table 2: meperidine", publisher: AGS (J Am Geriatr Soc 2023), url: "https://doi.org/10.1111/jgs.18372"}
+  - id: REN-008
+    type: renal
+    title: Tenofovir-containing products with eGFR below 30
+    drugs: [tenofovir]
+    egfr_below: 30
+    severity: major
+    evidence: >-
+      Emtricitabine/tenofovir disoproxil fumarate is not recommended with creatinine clearance
+      below 30 mL/min.
+    recommendation: Refer to the HIV prescriber for regimen adjustment.
+    source: {document: "TRUVADA (emtricitabine/tenofovir DF) prescribing information", section: "2 Dosage in Renal Impairment", publisher: FDA/DailyMed, url: "https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=truvada"}
+  - id: REN-009
+    type: renal
+    title: Digoxin with reduced renal function
+    drugs: [digoxin]
+    egfr_below: 50
+    severity: moderate
+    evidence: >-
+      Digoxin is renally cleared; dosing must be reduced in renal impairment and serum levels
+      monitored.
+    recommendation: Check a digoxin level and adjust the dose to renal function.
+    source: {document: "LANOXIN (digoxin) prescribing information", section: "2 Dosage: renal impairment", publisher: FDA/DailyMed, url: "https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=digoxin"}
+  - id: REN-010
+    type: renal
+    title: Spironolactone with eGFR below 30
+    drugs: [spironolactone]
+    egfr_below: 30
+    severity: major
+    evidence: >-
+      The Beers Criteria advise avoiding spironolactone when creatinine clearance is below 30
+      mL/min (hyperkalemia).
+    recommendation: Stop or review with the prescriber; check potassium.
+    source: {document: "American Geriatrics Society 2023 Updated AGS Beers Criteria", section: "Table 6", publisher: AGS (J Am Geriatr Soc 2023), url: "https://doi.org/10.1111/jgs.18372"}
+  - id: REN-011
+    type: renal
+    title: Sulfamethoxazole/trimethoprim with creatinine clearance below 30
+    drugs: [sulfamethoxazole]
+    egfr_below: 30
+    severity: moderate
+    evidence: >-
+      With creatinine clearance of 15-30 mL/min, half the usual sulfamethoxazole/trimethoprim
+      dose is recommended.
+    recommendation: Halve the dose (or avoid below 15).
+    source: {document: "BACTRIM (sulfamethoxazole/trimethoprim) prescribing information", section: "Dosage: impaired renal function", publisher: FDA/DailyMed, url: "https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=bactrim"}
+
+  # ------------------------------------------------------------------ therapeutic duplication
+  - id: DUP-001
+    type: duplication
+    title: Two or more NSAIDs
+    class: nsaid
+    severity: major
+    evidence: >-
+      NSAID labels advise against combining an NSAID with other NSAIDs: GI bleeding and renal
+      risk rise without added benefit.
+    recommendation: Keep a single NSAID at the lowest effective dose.
+    source: {document: "NSAID class labeling (e.g., naproxen)", section: "7 Drug Interactions: NSAIDs", publisher: FDA/DailyMed, url: "https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=naproxen"}
+  - id: DUP-002
+    type: duplication
+    title: Multiple acetaminophen-containing products
+    class: acetaminophen
+    severity: major
+    evidence: >-
+      Taking more than one acetaminophen-containing product risks exceeding the maximum daily
+      dose and causing severe liver injury; labels warn not to combine them.
+    recommendation: Keep one acetaminophen source and total daily acetaminophen under the labeled maximum.
+    source: {document: "FDA Drug Safety Communication: prescription acetaminophen combination products limited to 325 mg (2011)", section: "Boxed Warning: hepatotoxicity", publisher: FDA, url: "https://www.fda.gov/drugs/drug-safety-and-availability"}
+  - id: DUP-003
+    type: duplication
+    title: Two or more opioids
+    class: opioid
+    severity: major
+    evidence: >-
+      Concurrent opioids raise total opioid exposure and overdose risk; confirm whether a
+      long-acting plus breakthrough regimen is intended.
+    recommendation: Confirm the intended regimen and total daily morphine milligram equivalents with the prescriber.
+    source: {document: "CDC Clinical Practice Guideline for Prescribing Opioids for Pain (2022)", section: "Recommendations 4-5 and 8", publisher: CDC MMWR, url: "https://www.cdc.gov/mmwr/volumes/71/rr/rr7103a1.htm"}
+  - id: DUP-004
+    type: duplication
+    title: Two or more statins
+    class: statin
+    severity: moderate
+    evidence: >-
+      Two statins give no added benefit and increase myopathy risk; this is usually a
+      reconciliation error (an old statin never discontinued).
+    recommendation: Keep one statin; discontinue the other in the medication list.
+    source: {document: "The Joint Commission NPSG.03.06.01 (medication reconciliation)", section: "Compare medication information to identify omissions, duplications and interactions", publisher: The Joint Commission, url: "https://www.jointcommission.org/standards/national-patient-safety-goals/"}
+  - id: DUP-005
+    type: duplication
+    title: Two or more ACE inhibitors
+    class: ace_inhibitor
+    severity: major
+    evidence: >-
+      Two ACE inhibitors duplicate the same mechanism (hypotension, hyperkalemia, renal
+      impairment).
+    recommendation: Keep one ACE inhibitor.
+    source: {document: "The Joint Commission NPSG.03.06.01 (medication reconciliation)", section: "Compare medication information to identify omissions, duplications and interactions", publisher: The Joint Commission, url: "https://www.jointcommission.org/standards/national-patient-safety-goals/"}
+  - id: DUP-006
+    type: duplication
+    title: Two or more ARBs
+    class: arb
+    severity: major
+    evidence: >-
+      Two angiotensin receptor blockers duplicate the same mechanism.
+    recommendation: Keep one ARB.
+    source: {document: "The Joint Commission NPSG.03.06.01 (medication reconciliation)", section: "Compare medication information to identify omissions, duplications and interactions", publisher: The Joint Commission, url: "https://www.jointcommission.org/standards/national-patient-safety-goals/"}
+  - id: DUP-007
+    type: duplication
+    title: Two or more beta-blockers
+    class: beta_blocker
+    severity: major
+    evidence: >-
+      Two beta-blockers duplicate therapy (bradycardia, hypotension).
+    recommendation: Keep one beta-blocker.
+    source: {document: "The Joint Commission NPSG.03.06.01 (medication reconciliation)", section: "Compare medication information to identify omissions, duplications and interactions", publisher: The Joint Commission, url: "https://www.jointcommission.org/standards/national-patient-safety-goals/"}
+  - id: DUP-008
+    type: duplication
+    title: Two or more antihistamines
+    class: antihistamine
+    severity: moderate
+    evidence: >-
+      Combining antihistamines adds sedation and anticholinergic effects without added benefit;
+      the Beers Criteria advise avoiding first-generation antihistamines in older adults.
+    recommendation: Keep one, preferably non-sedating, antihistamine.
+    source: {document: "American Geriatrics Society 2023 Updated AGS Beers Criteria", section: "Table 2: first-generation antihistamines", publisher: AGS (J Am Geriatr Soc 2023), url: "https://doi.org/10.1111/jgs.18372"}
+  - id: DUP-009
+    type: duplication
+    title: Two or more benzodiazepines
+    class: benzodiazepine
+    severity: major
+    evidence: >-
+      Two benzodiazepines add sedation, falls and respiratory-depression risk.
+    recommendation: Keep one benzodiazepine.
+    source: {document: "American Geriatrics Society 2023 Updated AGS Beers Criteria", section: "Table 2: benzodiazepines", publisher: AGS (J Am Geriatr Soc 2023), url: "https://doi.org/10.1111/jgs.18372"}
+  - id: DUP-010
+    type: duplication
+    title: Two or more SSRIs
+    class: ssri
+    severity: major
+    evidence: >-
+      Combining serotonergic antidepressants increases the risk of serotonin syndrome.
+    recommendation: Keep one SSRI; taper the other under prescriber guidance.
+    source: {document: "ZOLOFT (sertraline) prescribing information", section: "5 Warnings: Serotonin Syndrome", publisher: FDA/DailyMed, url: "https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=sertraline"}
+  - id: DUP-011
+    type: duplication
+    title: Two P2Y12 inhibitors
+    class: p2y12_inhibitor
+    severity: major
+    evidence: >-
+      Clopidogrel and prasugrel together duplicate P2Y12 inhibition and increase bleeding risk;
+      a switch from one to the other usually means the old one should stop.
+    recommendation: Confirm which P2Y12 inhibitor is current and discontinue the other.
+    source: {document: "EFFIENT (prasugrel) prescribing information", section: "5 Warnings: bleeding risk", publisher: FDA/DailyMed, url: "https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=prasugrel"}
+  - id: DUP-012
+    type: duplication
+    title: Two or more inhaled corticosteroids
+    class: inhaled_corticosteroid
+    severity: moderate
+    evidence: >-
+      Two inhaled corticosteroids add systemic steroid exposure without added benefit.
+    recommendation: Keep one inhaled corticosteroid at the needed dose.
+    source: {document: "The Joint Commission NPSG.03.06.01 (medication reconciliation)", section: "Compare medication information to identify omissions, duplications and interactions", publisher: The Joint Commission, url: "https://www.jointcommission.org/standards/national-patient-safety-goals/"}
+  - id: DUP-013
+    type: duplication
+    title: Two or more hormonal contraceptive products
+    class: hormonal_contraceptive
+    severity: moderate
+    evidence: >-
+      Two hormonal contraceptive products are rarely intended and add estrogen/progestin
+      exposure (thromboembolic risk).
+    recommendation: Confirm the current method and discontinue the other product.
+    source: {document: "The Joint Commission NPSG.03.06.01 (medication reconciliation)", section: "Compare medication information to identify omissions, duplications and interactions", publisher: The Joint Commission, url: "https://www.jointcommission.org/standards/national-patient-safety-goals/"}
+  - id: DUP-014
+    type: duplication
+    title: Two or more anticoagulants
+    class: anticoagulant
+    severity: major
+    evidence: >-
+      Two anticoagulants markedly increase bleeding risk.
+    recommendation: Confirm the current anticoagulant and stop the other.
+    source: {document: "COUMADIN (warfarin sodium) prescribing information", section: "5.1 Hemorrhage", publisher: FDA/DailyMed, url: "https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=warfarin"}
+  - id: DUP-ING
+    type: duplication
+    title: Same ingredient in two products
+    class: null
+    severity: moderate
+    evidence: >-
+      The same active ingredient listed in two products doubles exposure and usually means an
+      old order was never discontinued.
+    recommendation: Keep one product; discontinue the duplicate.
+    source: {document: "The Joint Commission NPSG.03.06.01 (medication reconciliation)", section: "Compare medication information to identify omissions, duplications and interactions", publisher: The Joint Commission, url: "https://www.jointcommission.org/standards/national-patient-safety-goals/"}
