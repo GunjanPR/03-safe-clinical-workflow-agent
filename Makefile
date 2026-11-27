@@ -4,7 +4,7 @@ LLM_URL ?= http://127.0.0.1:11434/v1
 LLM_MODEL ?= llama3.2
 PG_URL ?= postgresql+psycopg://clinagent:clinagent@127.0.0.1:5433/clinagent
 
-.PHONY: install lint format test run data synthea store cases eval eval-det eval-llm report up down pg-load hapi-load
+.PHONY: install lint format test run data synthea store cases eval eval-det eval-llm eval-llm-agent report up down pg-load hapi-load
 
 install:
 	$(PY) -m pip install -e ".[dev,postgres,otlp]"
@@ -45,6 +45,12 @@ eval-det:
 
 eval-llm:
 	$(PY) -m clinagent.eval.run --cases eval/cases_test.jsonl --name test_llm --llm-base-url $(LLM_URL) --llm-model $(LLM_MODEL)
+
+# Competitor baseline: a prompted tool-calling LLM agent told the same rules (needs tool calls)
+LLM_AGENT_MODEL ?= qwen2.5:7b
+eval-llm-agent:
+	$(PY) -m clinagent.eval.llm_agent --cases eval/cases_test.jsonl --name test_llm_agent \
+	  --llm-base-url $(LLM_URL) --llm-model $(LLM_AGENT_MODEL) --llm-cache eval/llm_agent_cache.jsonl
 
 report:
 	$(PY) -m clinagent.eval.report
