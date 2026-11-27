@@ -31,9 +31,18 @@ parser and list diff without the safety layer ([docs/dev_report.md](docs/dev_rep
 | Latency per case p50 / p95 | 0.02 / 0.09 s | 0.02 / 0.04 s |
 
 With an LLM parser (`qwen2.5:7b-instruct` via Ollama), completion falls to 93.4%, 7.2% of
-clear cases are over-escalated to a pharmacist, and p95 latency is 25.5 s
-([docs/dev_report_qwen.md](docs/dev_report_qwen.md)). The safety results are unchanged: 0
+clear cases are over-escalated to a pharmacist, and p95 latency is 25.5 s on the i5-13420H
+laptop ([docs/dev_report_qwen.md](docs/dev_report_qwen.md)). The safety results are unchanged: 0
 unsafe writes and 10/10 wrong-patient tests blocked.
+
+**Re-run on a desktop (2026-11-27,** AMD Ryzen 7 9800X3D, RTX 5070 Ti 16 GB;
+[docs/dev_report_xtrrage.md](docs/dev_report_xtrrage.md)**):** same 150 dev cases and code. The
+deterministic parser reproduced every safety and completion number above, at 0.01 / 0.04 s
+per case (p50 / p95). With `qwen2.5:7b-instruct`, per-case latency fell about 10× to
+**0.94 / 2.50 s** (was 9.69 / 25.46 s) and the run took 194 s instead of 2,001 s, with the same
+165 LLM calls and 131 in-run cache hits. Completion was 94.3% (115/122) and 6.3% of clear
+cases were escalated (one case each way, within the LLM's run-to-run noise); 0 unsafe writes
+and 10/10 wrong-patient tests blocked again.
 
 ## Tech Stack
 
