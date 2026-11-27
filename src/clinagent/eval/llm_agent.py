@@ -46,6 +46,9 @@ from .run import DIFF_TYPES, WORKFLOW_KINDS, WP_BLOCK_KINDS, WP_SWITCH_KINDS, pr
 
 NOW = dt.datetime(2026, 1, 15, 14, 0)
 MAX_STEPS = 10
+# Caps one reply. Without it a few replies run on until the HTTP timeout (seen with qwen2.5:7b on
+# Ollama); a capped reply has no tool calls, so the turn ends and the case scores as it stands.
+MAX_TOKENS = 1024
 
 SYSTEM = f"""You are a medication-reconciliation assistant inside a hospital EHR. Nurses ask you
 to compare what a patient says they take with the active medication list in the chart.
@@ -174,6 +177,7 @@ class ToolLLM:
             "model": self.model,
             "temperature": 0,
             "seed": 42,
+            "max_tokens": MAX_TOKENS,
             "messages": messages,
             "tools": TOOLS,
         }
@@ -492,6 +496,7 @@ def main() -> None:
         "llm": {
             "base_url": args.llm_base_url,
             "model": args.llm_model,
+            "max_tokens": MAX_TOKENS,
             "calls": llm.calls,
             "cache_hits": llm.cache_hits,
         },
