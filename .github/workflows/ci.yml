@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  lint-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -e ".[dev]"
+      - run: ruff check . && ruff format --check .
+      - run: python -m pytest -q
+      # The published reports must be exactly what the committed results render to.
+      - name: Reports match the committed results
+        run: |
+          python -m clinagent.eval.report --runs test_det test_llm --out docs/test_report.md
+          python -m clinagent.eval.report --runs dev_det_v4 --out docs/dev_report.md
+          python -m clinagent.eval.report --runs dev_llm_qwen25_v2 --out docs/dev_report_qwen.md
+          python -m clinagent.eval.report --runs dev_llm_llama32 --out docs/dev_report_llama.md
+          python -m clinagent.eval.report --runs dev_det_xtrrage dev_llm_qwen25_xtrrage --out docs/dev_report_xtrrage.md
+          git diff --exit-code docs/
+
+  docker:
+    runs-on: ubuntu-latest
+    needs: lint-test
+    steps:
+      - uses: actions/checkout@v5
+      - run: docker build -t clinagent:ci .

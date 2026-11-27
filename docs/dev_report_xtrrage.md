@@ -8,7 +8,7 @@
 - Hardware: XTRRAGE desktop: Ryzen 7 9800X3D, RTX 5070 Ti 16 GB, Windows 11; wall time 3.3 s
 - Audit: 1190 events, chain valid = True, replay matches live outcome in 100.0% (150/150)
 
-| Metric | Full agent | Baseline |
+| Metric | Full agent | No-controls ablation |
 |---|---|---|
 | Workflow completion (expected terminal state) | 100.0% (122/122) [96.9-100.0] | 91.0% (111/122) [84.6-94.9] |
 | Committed after clinician approval | 91.0% (111/122) [84.6-94.9] | 100.0% (122/122) [96.9-100.0] |
@@ -28,7 +28,7 @@
 | Latency per case p50 / p95 (s) | 0.01 / 0.04 | 0.01 / 0.01 |
 | Errors / parser fallbacks | 0 / 0 | 0 / 0 |
 
-Unsafe-write reduction vs baseline: 1.000 (1 - agent/baseline).
+Unsafe-write reduction vs the no-controls ablation: 1.000 (1 - agent/ablation). The ablation is built to follow instruction-like text and asserted approvals, so this shows each attack is real, not that the agent beats a deployable system.
 
 ### Detection by type (full agent): precision [95% CI] / recall [95% CI]
 
@@ -56,9 +56,9 @@ Unsafe-write reduction vs baseline: 1.000 (1 - agent/baseline).
 | renal | 100.0% (5/5) [56.6-100.0] |
 | duplication | 100.0% (42/42) [91.6-100.0] |
 
-### Unsafe writes by attack type (agent / baseline)
+### Unsafe writes by attack type (agent / no-controls ablation)
 
-| Attack | Cases | Agent | Baseline |
+| Attack | Cases | Agent | Ablation |
 |---|---|---|---|
 | inj_note | 8 | 0 | 8 |
 | inj_med | 7 | 0 | 14 |
@@ -71,7 +71,7 @@ Unsafe-write reduction vs baseline: 1.000 (1 - agent/baseline).
 
 ### Wrong-patient tests by type (blocked)
 
-| Test | Agent | Baseline |
+| Test | Agent | Ablation |
 |---|---|---|
 | wrong_mrn | 100.0% (2/2) | 0.0% (0/2) |
 | wrong_dob | 100.0% (2/2) | 0.0% (0/2) |
@@ -87,7 +87,7 @@ Unsafe-write reduction vs baseline: 1.000 (1 - agent/baseline).
 - Hardware: XTRRAGE desktop: Ryzen 7 9800X3D, RTX 5070 Ti 16 GB, Windows 11; wall time 194.0 s
 - Audit: 1183 events, chain valid = True, replay matches live outcome in 100.0% (150/150)
 
-| Metric | Full agent | Baseline |
+| Metric | Full agent | No-controls ablation |
 |---|---|---|
 | Workflow completion (expected terminal state) | 94.3% (115/122) [88.6-97.2] | 91.0% (111/122) [84.6-94.9] |
 | Committed after clinician approval | 85.2% (104/122) [77.9-90.5] | 100.0% (122/122) [96.9-100.0] |
@@ -107,7 +107,7 @@ Unsafe-write reduction vs baseline: 1.000 (1 - agent/baseline).
 | Latency per case p50 / p95 (s) | 0.94 / 2.50 | 0.01 / 1.59 |
 | Errors / parser fallbacks | 0 / 0 | 0 / 0 |
 
-Unsafe-write reduction vs baseline: 1.000 (1 - agent/baseline).
+Unsafe-write reduction vs the no-controls ablation: 1.000 (1 - agent/ablation). The ablation is built to follow instruction-like text and asserted approvals, so this shows each attack is real, not that the agent beats a deployable system.
 
 ### Detection by type (full agent): precision [95% CI] / recall [95% CI]
 
@@ -135,9 +135,9 @@ Unsafe-write reduction vs baseline: 1.000 (1 - agent/baseline).
 | renal | 100.0% (5/5) [56.6-100.0] |
 | duplication | 100.0% (42/42) [91.6-100.0] |
 
-### Unsafe writes by attack type (agent / baseline)
+### Unsafe writes by attack type (agent / no-controls ablation)
 
-| Attack | Cases | Agent | Baseline |
+| Attack | Cases | Agent | Ablation |
 |---|---|---|---|
 | inj_note | 8 | 0 | 8 |
 | inj_med | 7 | 0 | 13 |
@@ -150,7 +150,7 @@ Unsafe-write reduction vs baseline: 1.000 (1 - agent/baseline).
 
 ### Wrong-patient tests by type (blocked)
 
-| Test | Agent | Baseline |
+| Test | Agent | Ablation |
 |---|---|---|
 | wrong_mrn | 100.0% (2/2) | 0.0% (0/2) |
 | wrong_dob | 100.0% (2/2) | 0.0% (0/2) |

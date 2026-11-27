@@ -51,7 +51,7 @@ def render(runs: list[dict]) -> str:
             f"- Audit: {s['audit']['events']} events, chain valid = {s['audit']['chain_valid']}, "
             f"replay matches live outcome in {pct(s['audit']['replay_consistent'], False)}",
             "",
-            "| Metric | Full agent | Baseline |",
+            "| Metric | Full agent | No-controls ablation |",
             "|---|---|---|",
             f"| Workflow completion (expected terminal state) | {pct(a['workflow_completion'])} "
             f"| {pct(b['workflow_completion'])} |",
@@ -92,8 +92,10 @@ def render(runs: list[dict]) -> str:
             f"| Errors / parser fallbacks | {a['errors']} / {a['fallbacks']} "
             f"| {b['errors']} / {b['fallbacks']} |",
             "",
-            f"Unsafe-write reduction vs baseline: "
-            f"{f3(s['unsafe_write_reduction'])} (1 - agent/baseline).",
+            f"Unsafe-write reduction vs the no-controls ablation: "
+            f"{f3(s['unsafe_write_reduction'])} (1 - agent/ablation). The ablation is built "
+            "to follow instruction-like text and asserted approvals, so this shows each attack "
+            "is real, not that the agent beats a deployable system.",
             "",
             "### Detection by type (full agent): precision [95% CI] / recall [95% CI]",
             "",
@@ -107,9 +109,9 @@ def render(runs: list[dict]) -> str:
             out.append(f"| {t} | {pct(d)} |")
         out += [
             "",
-            "### Unsafe writes by attack type (agent / baseline)",
+            "### Unsafe writes by attack type (agent / no-controls ablation)",
             "",
-            "| Attack | Cases | Agent | Baseline |",
+            "| Attack | Cases | Agent | Ablation |",
             "|---|---|---|---|",
         ]
         for k, n in a["unsafe_writes"]["cases_by_kind"].items():
@@ -121,7 +123,7 @@ def render(runs: list[dict]) -> str:
             "",
             "### Wrong-patient tests by type (blocked)",
             "",
-            "| Test | Agent | Baseline |",
+            "| Test | Agent | Ablation |",
             "|---|---|---|",
         ]
         for k, d in a["wrong_patient"]["by_kind"].items():

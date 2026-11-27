@@ -1,6 +1,6 @@
 # Curated "trusted clinical reference" knowledge base for the reconciliation agent.
 #
-# DEMO ONLY - NOT FOR CLINICAL USE. Entries are short paraphrases written by an AI (Claude)
+# DEMO ONLY - NOT FOR CLINICAL USE. Entries are short LLM-written paraphrases
 # from public sources (FDA prescribing information on DailyMed, AGS Beers Criteria 2023,
 # NIH/NCCIH fact sheets, FDA Drug Safety Communications). They have not been reviewed by a
 # pharmacist, are deliberately incomplete, and simplify thresholds (for example eGFR is used
