@@ -40,8 +40,14 @@ cause several writes. These are not clinician-validated results.
 
 - **The ablation is not a competitor.** It is built to follow instruction-like text in the
   statement and to accept an asserted approval, so "0 vs 180 unsafe writes" shows that each
-  attack is real and that some control blocks it. It does not show that the agent beats a
-  system someone would deploy.
+  attack is real and that some control blocks it. For a real competitor, see the next point.
+- **A prompted LLM agent told the same rules fails most attacks.** `qwen2.5:7b` with the same
+  store as tools and a system prompt stating every rule made an unsafe write in **107 of 140
+  attack and identity cases** (76%, CI 69-83%). It wrote before any approval in 112 of 160
+  workflow cases, usually with an approval id it invented, and opened the chart in 18 of 30
+  wrong-patient tests. It is one 7B model and one prompt with no iteration; the point is that
+  the rules hold only when they are enforced in code. Details:
+  [docs/llm_agent_baseline.md](docs/llm_agent_baseline.md).
 - **The clinical-alert and discrepancy scores are a consistency check.** The case generator
   derives the expected alerts from the same knowledge base the agent runs, and writes
   medication names from the same lexicon the parser matches. A perfect score therefore means
